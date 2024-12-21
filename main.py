@@ -7,12 +7,6 @@ import yaml
 from jinja2 import Template
 import xmltodict
 
-# Input parameters
-with open('config.yml', 'r') as file:
-    config = yaml.safe_load(file)
-type_template = config["templates"] #: Subdirectory containing dedicated pool templates
-models_input = config["models_input"]
-
 def main(type_template: str, models_input: str):
     """Creates the DDL's
 
@@ -65,5 +59,7 @@ def xml_to_dict(file_xml: str) -> dict:
     return dict_doc
 
 if __name__ == "__main__":
-    main(type_template=type_template, models_input=models_input)
+    with open('config.yml', 'r') as file:
+        config = yaml.safe_load(file)
+    main(type_template=config["templates"], models_input=config["models_input"])
     pydoc.writedoc('main')
