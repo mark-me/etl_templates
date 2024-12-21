@@ -35,8 +35,11 @@ def main(type_template: str, models_input: str):
                 file_ddl.write(ddl_statement)
 
         # Creating view DDL's
+        # Updating mapping load
+        # Creating stored procedures
 
 def xml_to_dict(file_xml: str) -> dict:
+    # Function not yet used, but candidate for reading XML file
     with open(file_xml) as fd:
         doc = xmltodict.parse(fd.read())
     dict_doc = json.dumps(xmltodict.parse(doc))
