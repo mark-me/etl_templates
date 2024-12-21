@@ -17,13 +17,15 @@ def main(type_template: str, models_input: str):
     with open(models_input) as json_file:
         models = json.load(json_file)
 
-    with open(dir_template + "create_table.sql", 'r') as file:
-        ddl_create_table = file.read()
-
     # Create output directory
     Path(dir_output).mkdir(parents=True, exist_ok=True)
-    # Create DDL
+
+    # Generation
     for schema in models["schemas"]:
+
+        # Creating table DDL's
+        with open(dir_template + "create_table.sql", 'r') as file:
+            ddl_create_table = file.read()
         for table in schema["tables"]:
             ddl_statement = Template(ddl_create_table, trim_blocks=True, lstrip_blocks=True).render(
                 schema=schema, table=table, columns=table["columns"]
@@ -31,6 +33,8 @@ def main(type_template: str, models_input: str):
             file_output = dir_output + schema["name"] + "_" + table["name"] + ".sql"
             with open(file_output, "w") as file_ddl:
                 file_ddl.write(ddl_statement)
+
+        # Creating view DDL's
 
 def xml_to_dict(file_xml: str) -> dict:
     with open(file_xml) as fd:
