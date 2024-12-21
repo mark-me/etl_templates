@@ -4,8 +4,8 @@ Dynamically generate DDL's based on model data.
 
 ## Resources
 
-* Templating engine [jinja](https://jinja.palletsprojects.com/en/stable/)
-* Reading XML [xmltodict](https://pypi.org/project/xmltodict/)
+* Templating engine: [jinja](https://jinja.palletsprojects.com/en/stable/)
+* Reading XML: [xmltodict](https://pypi.org/project/xmltodict/)
 
 ### Future developments
 
