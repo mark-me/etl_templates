@@ -1,15 +1,22 @@
 import json
 from pathlib import Path
 import pprint
+import pydoc
 
 from jinja2 import Template
 import xmltodict
 
 # Input parameters
-type_template = "dedicated-pool"
+type_template = "dedicated-pool" #: Subdirectory containing dedicated pool templates
 models_input = "input/models.json"
 
 def main(type_template: str, models_input: str):
+    """Creates the DDL's
+
+    Args:
+        type_template (str): The type of templates your want to use to implement your models
+        models_input (str): The file that describes the models
+    """
     # Main
     dir_template = "templates/" + type_template + "/"
     dir_output = "output/" + type_template + "/"
@@ -39,6 +46,14 @@ def main(type_template: str, models_input: str):
         # Creating stored procedures
 
 def xml_to_dict(file_xml: str) -> dict:
+    """ Converting XML files describing models to Python dictionaries
+
+    Args:
+        file_xml (str): The path to a XML file
+
+    Returns:
+        dict: The data converted to a dictionary
+    """
     # Function not yet used, but candidate for reading XML file
     with open(file_xml) as fd:
         doc = xmltodict.parse(fd.read())
@@ -48,3 +63,4 @@ def xml_to_dict(file_xml: str) -> dict:
 
 if __name__ == "__main__":
     main(type_template=type_template, models_input=models_input)
+    pydoc.writedoc('main')

@@ -2,6 +2,8 @@
 
 Dynamically generate DDL's based on model data.
 
+Added example docstrings and documentation generation as inspiration
+
 ## Resources
 
 * Templating engine: [jinja](https://jinja.palletsprojects.com/en/stable/)
