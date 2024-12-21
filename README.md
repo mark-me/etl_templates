@@ -1,6 +1,6 @@
 # ETL Templating
 
-Generate DDL's dynamically based on model data.
+Dynamically generate DDL's based on model data.
 
 ## Resources
 
