@@ -6,6 +6,7 @@ CREATE TABLE {{schema.name}}.{{table.name}}
         ,
     {% endif %}
 {% endfor %}
+
 )
 WITH
 (
