@@ -2,13 +2,16 @@ import json
 from pathlib import Path
 import pprint
 import pydoc
+import yaml
 
 from jinja2 import Template
 import xmltodict
 
 # Input parameters
-type_template = "dedicated-pool" #: Subdirectory containing dedicated pool templates
-models_input = "input/models.json"
+with open('config.yml', 'r') as file:
+    config = yaml.safe_load(file)
+type_template = config["templates"] #: Subdirectory containing dedicated pool templates
+models_input = config["models_input"]
 
 def main(type_template: str, models_input: str):
     """Creates the DDL's

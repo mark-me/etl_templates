@@ -1,0 +1,2 @@
+templates: 'dedicated-pool'
+models_input: 'input/models.json'
