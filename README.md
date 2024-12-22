@@ -22,7 +22,7 @@ Logs are written as JSON in the terminal and to log.json.
 
 ### Sample XML conversion
 
-The current code is based on my own sample data structure. The [example model](https://generate.x-breeze.com/docs/3.1/Examples/) XML's from CrossBreeze are added to the repository. The script ```xml_to_json.py``` can be used to convert them to more human readable JSON to analyze the data to be used for this project.
+The current code is based on my own sample data structure. The [example model](https://generate.x-breeze.com/docs/3.1/Examples/) XML's from CrossBreeze are added to the repository (```input/model_source.xml``` and ```input/model_dwh.xml```). The script ```xml_to_json.py``` can be used to convert them to more human readable JSON to analyze the data to be used for this project.
 
 ## Resources
 
