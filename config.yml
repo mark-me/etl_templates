@@ -1,2 +1,2 @@
-templates: 'dedicated-pool'
+templates: 'duckdb' # 'dedicated-pool'
 models_input: 'input/models.json'
