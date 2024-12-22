@@ -6,7 +6,7 @@ Be warned: this code is still far from the stated goal and currently just implem
 
 The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
 
-* The bare-bones example model is described as a JSON in ```input/models.json```
+* The bare-bones example theorethical model is described as a JSON in ```input/models.json```, but need to be replaced by  [PowerDesigner XML's. See the section [Sample XML conversion](#sample-xml-conversion)
 * An example template that generates a create schema DDL is the file ```templates/{implementation}/create_schema.sql```
 * An example template that generates a create table DDL is the file ```templates/{implementation}/create_table.sql```
 * The output is a file for each DDL written in the directory ```output/{implementation}```
@@ -22,7 +22,7 @@ Logs are written as JSON in the terminal and to log.json.
 
 ### Sample XML conversion
 
-The current code is based on my own sample data structure. The [example model](https://generate.x-breeze.com/docs/3.1/Examples/) XML's from [CrossBreeze](https://crossbreeze.nl/) are added to the repository (```input/model_source.xml``` and ```input/model_dwh.xml```). The script ```xml_to_json.py``` can be used to convert them to more human readable JSON to analyze the data to be used for this project.
+The current code is based on my own sample data structure, but we want to move to PowerDesigner generated model data. As a starting point the [example model](https://generate.x-breeze.com/docs/3.1/Examples/) XML's from [CrossBreeze](https://crossbreeze.nl/) are added to the repository (```input/model_source.xml``` and ```input/model_dwh.xml```). The script ```xml_to_json.py``` can be used to convert them to more human readable JSON to analyze the data to be used for this project.
 
 ## Resources
 
