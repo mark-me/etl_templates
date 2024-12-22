@@ -19,6 +19,7 @@ def main(type_template: str, models_input: str):
         type_template (str): The type of templates your want to use to implement your models
         models_input (str): The file that describes the models
     """
+    logger.info(f"Writing implementation for {type_template}")
     dir_template = "templates/" + type_template + "/"
     dir_output = "output/" + type_template + "/"
 
@@ -34,6 +35,7 @@ def main(type_template: str, models_input: str):
     # Load model data
     with open(models_input) as json_file:
         models = json.load(json_file)
+    logger.info(f"Read models from {models_input}")
 
     # Generation
     for schema in models["schemas"]:
