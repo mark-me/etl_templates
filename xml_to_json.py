@@ -1,5 +1,4 @@
 import json
-import pprint
 
 import xmltodict
 
@@ -16,17 +15,16 @@ def xml_to_dict(file_xml: str) -> dict:
     with open(file_xml) as fd:
         doc = fd.read()
     dict_data = xmltodict.parse(doc)
-    #dict_doc = json.dumps()
-    pprint.pprint(dict_data)
+
     return dict_data
 
 def main():
     dict_model_source = xml_to_dict("input/model_source.xml")
     with open('output/model_source.json', 'w') as fp:
-        json.dump(dict_model_source, fp)
+        json.dump(dict_model_source, fp, indent=4)
     dict_model_dwh = xml_to_dict("input/model_dwh.xml")
     with open('output/model_dwh.json', 'w') as fp:
-        json.dump(dict_model_dwh, fp)
+        json.dump(dict_model_dwh, fp, indent=4)
 
 
 if __name__ == "__main__":
