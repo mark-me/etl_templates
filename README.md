@@ -1,6 +1,8 @@
 # ETL Templating
 
-Dynamically generate DDL's based on model data.
+This repository aims to use descriptions of logical data models and their lineage mappings to generate physical implementations of those model and an ETL program.
+
+Note: so far this only implements table DDL's.
 
 The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
 
