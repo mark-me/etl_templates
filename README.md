@@ -2,7 +2,8 @@
 
 Dynamically generate DDL's based on model data.
 
-* The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
+The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
+
 * The example model is described as a JSON in ```input/models.json```
 * An example template that generates a create table DDL is the file ```templates/dedicated-pool/create_table.sql```
 * The output is a file for each DDL written in the directory ```output/dedicated-pool```
