@@ -1,6 +1,6 @@
 # ETL Templating
 
-This repository aims to implement descriptions of logical data models and descriptions of model lineage mappings to create procedures that generate data, filling those models.
+This repository aims to deploy implement descriptions of logical data models and use descriptions of model lineage mappings to create procedures that fill those models.
 
 Note: so far this only implements table DDL's.
 
