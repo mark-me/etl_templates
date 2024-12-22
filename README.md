@@ -1,8 +1,8 @@
 # ETL Templating
 
-This repository aims to deploy descriptions of logical data models and descriptions of model lineage mappings to fill those models with data.
+This repository aims to deploy descriptions of logical data models and descriptions of model lineage mappings to fill those models with data for multiple technical solutions.
 
-Note: so far this only implements 'create table' DDLs.
+Be warned: this code is still far from the stated goal and currently just implements data model implementations using 'create table' DDLs for dedicated pool.
 
 The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
 
