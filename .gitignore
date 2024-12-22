@@ -175,3 +175,6 @@ cython_debug/
 
 # Exclude output
 output/*
+
+# Exclude logging
+log.json*

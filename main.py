@@ -1,10 +1,16 @@
 import json
+import logging
 import pprint
 import pydoc
 import yaml
 
 from jinja2 import Environment, FileSystemLoader
 import xmltodict
+
+import logging_config
+
+logger = logging.getLogger(__name__)
+
 
 def main(type_template: str, models_input: str):
     """Creates the DDL's
@@ -36,6 +42,7 @@ def main(type_template: str, models_input: str):
         file_output = dir_output + schema["name"] + ".sql"
         with open(file_output, mode="w", encoding="utf-8") as file_ddl:
             file_ddl.write(content)
+        logger.info(f"Written Schema DDL {file_output}")
 
         # Creating table DDL's
         for table in schema["tables"]:
@@ -45,10 +52,12 @@ def main(type_template: str, models_input: str):
             file_output = dir_output + schema["name"] + "_" + table["name"] + ".sql"
             with open(file_output, mode="w", encoding="utf-8") as file_ddl:
                 file_ddl.write(content)
+            logger.info(f"Written Table DDL {file_output}")
 
         # Creating view DDL's
         # Updating mapping load
         # Creating stored procedures
+
 
 def xml_to_dict(file_xml: str) -> dict:
     """Converting XML files describing models to Python dictionaries
