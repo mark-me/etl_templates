@@ -2,7 +2,7 @@
 
 This repository aims to deploy descriptions of logical data models and descriptions of model lineage mappings to fill those models with data.
 
-Note: so far this only implements table DDL's.
+Note: so far this only implements 'create table' DDL's.
 
 The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
 
