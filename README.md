@@ -7,7 +7,7 @@ Be warned: this code is still far from the stated goal and currently just implem
 The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
 
 * The bare-bones example theorethical model is described as a JSON in ```input/models.json```, but need to be replaced by PowerDesigner XML's. See the section [Sample XML conversion](#sample-xml-conversion)
-* The [Jinja templating engine](https://jinja.palletsprojects.com/en/stable/) is used to generate implementations. Two example templates are added:
+* The [Jinja templating engine](https://jinja.palletsprojects.com/en/stable/templates/) is used to generate implementations. Two example templates are added:
   * a create schema DDL template ```templates/{implementation}/create_schema.sql```
   * a create table DDL template ```templates/{implementation}/create_table.sql```
 * The output is a file for each DDL written in the directory ```output/{implementation}```
