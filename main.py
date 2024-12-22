@@ -1,11 +1,9 @@
 import json
 import logging
-import pprint
 import pydoc
 import yaml
 
 from jinja2 import Environment, FileSystemLoader
-import xmltodict
 
 import logging_config
 
@@ -59,23 +57,6 @@ def main(type_template: str, models_input: str):
         # Creating view DDL's
         # Updating mapping load
         # Creating stored procedures
-
-
-def xml_to_dict(file_xml: str) -> dict:
-    """Converting XML files describing models to Python dictionaries
-
-    Args:
-        file_xml (str): The path to a XML file
-
-    Returns:
-        dict: The data converted to a dictionary
-    """
-    # Function not yet used, but candidate for reading XML file
-    with open(file_xml) as fd:
-        doc = xmltodict.parse(fd.read())
-    dict_doc = json.dumps(xmltodict.parse(doc))
-    pprint.pprint(dict_doc)
-    return dict_doc
 
 
 if __name__ == "__main__":
