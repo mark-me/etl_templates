@@ -14,8 +14,8 @@ The configuration for model input and templating can be adapted in ```config.yml
 ## Getting started
 
 * Clone the repository
-* Create a virtual environment and add the libraries from requirements.txt
-* Run main.py
+* Create a virtual environment and add the libraries from ```requirements.txt```
+* Run ```main.py```
 * To run an example for a duckdb deployment you can run ```duckdb_deploy.py``` if you ran the duckdb example in main. The resulting database can be found in ```output/duckdb/duckdb.db```, which can be browsed with [dbeaver](https://duckdb.org/docs/guides/sql_editors/dbeaver.html).
 
 ## Resources
