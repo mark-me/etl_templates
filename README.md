@@ -8,6 +8,12 @@ The configuration for model input and templating can be adapted in ```config.yml
 * An example template that generates a create table DDL is the file ```templates/dedicated-pool/create_table.sql```
 * The output is a file for each DDL written in the directory ```output/dedicated-pool```
 
+## Getting started
+
+* Clone the repository
+* Create a virtual environment and add the libraries from requirements.txt
+* Run main.py
+
 ## Resources
 
 * Templating engine: [jinja](https://jinja.palletsprojects.com/en/stable/)
