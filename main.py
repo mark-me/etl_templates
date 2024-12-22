@@ -4,9 +4,8 @@ import pprint
 import pydoc
 import yaml
 
-from jinja2 import Template
+from jinja2 import Environment, FileSystemLoader
 import xmltodict
-
 
 def main(type_template: str, models_input: str):
     """Creates the DDL's
@@ -19,35 +18,37 @@ def main(type_template: str, models_input: str):
     dir_template = "templates/" + type_template + "/"
     dir_output = "output/" + type_template + "/"
 
+    # Load model data
     with open(models_input) as json_file:
         models = json.load(json_file)
+
+    # For loading templates
+    environment = Environment(
+        loader=FileSystemLoader(dir_template), trim_blocks=True, lstrip_blocks=True
+    )
 
     # Create output directory
     Path(dir_output).mkdir(parents=True, exist_ok=True)
 
     # Generation
     # Create schema
-    with open(dir_template + "create_schema.sql", "r") as file:
-        ddl_create_schema = file.read() # Open template
+    tpl_create_schema = environment.get_template("create_schema.sql")
     for schema in models["schemas"]:
         # Create schema DDL
-        ddl_statement = Template(
-            ddl_create_schema, trim_blocks=True, lstrip_blocks=True
-        ).render(schema=schema)
+        content = tpl_create_schema.render(schema=schema)
         file_output = dir_output + schema["name"] + ".sql"
-        with open(file_output, "w") as file_ddl:
-            file_ddl.write(ddl_statement)
+        with open(file_output, mode="w", encoding="utf-8") as file_ddl:
+            file_ddl.write(content)
 
         # Creating table DDL's
-        with open(dir_template + "create_table.sql", "r") as file:
-            ddl_create_table = file.read()
+        tpl_create_table = environment.get_template("create_table.sql")
         for table in schema["tables"]:
-            ddl_statement = Template(
-                ddl_create_table, trim_blocks=True, lstrip_blocks=True
-            ).render(schema=schema, table=table, columns=table["columns"])
+            content = tpl_create_table.render(
+                schema=schema, table=table, columns=table["columns"]
+            )
             file_output = dir_output + schema["name"] + "_" + table["name"] + ".sql"
-            with open(file_output, "w") as file_ddl:
-                file_ddl.write(ddl_statement)
+            with open(file_output, mode="w", encoding="utf-8") as file_ddl:
+                file_ddl.write(content)
 
         # Creating view DDL's
         # Updating mapping load
