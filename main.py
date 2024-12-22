@@ -18,32 +18,30 @@ def main(type_template: str, models_input: str):
     dir_template = "templates/" + type_template + "/"
     dir_output = "output/" + type_template + "/"
 
+    # Loading templates
+    environment = Environment(
+        loader=FileSystemLoader(dir_template), trim_blocks=True, lstrip_blocks=True
+    )
+    dict_templates = {
+        "schema": environment.get_template("create_schema.sql"),
+        "table": environment.get_template("create_table.sql"),
+    }
+
     # Load model data
     with open(models_input) as json_file:
         models = json.load(json_file)
 
-    # For loading templates
-    environment = Environment(
-        loader=FileSystemLoader(dir_template), trim_blocks=True, lstrip_blocks=True
-    )
-
-    # Create output directory
-    Path(dir_output).mkdir(parents=True, exist_ok=True)
-
     # Generation
-    # Create schema
-    tpl_create_schema = environment.get_template("create_schema.sql")
     for schema in models["schemas"]:
         # Create schema DDL
-        content = tpl_create_schema.render(schema=schema)
+        content = dict_templates["schema"].render(schema=schema)
         file_output = dir_output + schema["name"] + ".sql"
         with open(file_output, mode="w", encoding="utf-8") as file_ddl:
             file_ddl.write(content)
 
         # Creating table DDL's
-        tpl_create_table = environment.get_template("create_table.sql")
         for table in schema["tables"]:
-            content = tpl_create_table.render(
+            content = dict_templates["table"].render(
                 schema=schema, table=table, columns=table["columns"]
             )
             file_output = dir_output + schema["name"] + "_" + table["name"] + ".sql"
@@ -53,7 +51,6 @@ def main(type_template: str, models_input: str):
         # Creating view DDL's
         # Updating mapping load
         # Creating stored procedures
-
 
 def xml_to_dict(file_xml: str) -> dict:
     """Converting XML files describing models to Python dictionaries
