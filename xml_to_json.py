@@ -22,9 +22,11 @@ def xml_to_dict(file_xml: str) -> dict:
 
 def main():
     dict_model_source = xml_to_dict("input/model_source.xml")
-    with open('input/model_source.json', 'w') as fp:
+    with open('output/model_source.json', 'w') as fp:
         json.dump(dict_model_source, fp)
     dict_model_dwh = xml_to_dict("input/model_dwh.xml")
+    with open('output/model_dwh.json', 'w') as fp:
+        json.dump(dict_model_dwh, fp)
 
 
 if __name__ == "__main__":
