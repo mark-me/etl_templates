@@ -27,7 +27,7 @@ The current code is based on my own sample data structure, but we want to move t
 ## Resources
 
 * Documentation on how to create templates using the [Jinja templating engine](https://jinja.palletsprojects.com/en/stable/)
-* Reading XML: [xmltodict](https://pypi.org/project/xmltodict/)
+* Reading XML and turning them into [dictionaries](https://realpython.com/python-dicts/): [xmltodict](https://pypi.org/project/xmltodict/)
 
 ## Future developments
 
