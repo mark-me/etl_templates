@@ -13,7 +13,6 @@ def main(type_template: str, models_input: str):
         type_template (str): The type of templates your want to use to implement your models
         models_input (str): The file that describes the models
     """
-    # Main
     dir_template = "templates/" + type_template + "/"
     dir_output = "output/" + type_template + "/"
 
