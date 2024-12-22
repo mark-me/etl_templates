@@ -11,6 +11,8 @@ The configuration for model input and templating can be adapted in ```config.yml
 * An example template that generates a create table DDL is the file ```templates/{implementation}/create_table.sql```
 * The output is a file for each DDL written in the directory ```output/{implementation}```
 
+Logs are written as JSON in the terminal and to log.json.
+
 ## Getting started
 
 * Clone the repository
@@ -26,6 +28,5 @@ The configuration for model input and templating can be adapted in ```config.yml
 ## Future developments
 
 * [Merge loading for mappings](https://techcommunity.microsoft.com/blog/azuresynapseanalyticsblog/merge-t-sql-for-dedicated-sql-pools-is-now-ga/3634331)
-* [Logging](https://docs.python.org/3/howto/logging.html)
 * Added example docstrings and documentation generation as inspiration. Currently the simple [pydoc](https://docs.python.org/3/library/pydoc.html) is used, as the project extends we should consider switching to [Sphinx](https://www.sphinx-doc.org/en/master/)
 * Antecedents and precedents reporting for escalation business processes using [graphs](https://python.igraph.org/en/latest/tutorial.html) and [graph visualizations](https://networkx.org/)
