@@ -4,7 +4,7 @@ import duckdb
 
 def main():
     dir_scripts = "output/duckdb/"
-    con = duckdb.connect("output/duckdb.db")
+    con = duckdb.connect("output/duckdb/duckdb.db")
 
     files = [f for f in pathlib.Path().glob(dir_scripts + "*.sql")]
     print(files)

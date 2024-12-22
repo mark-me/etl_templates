@@ -7,14 +7,16 @@ Be warned: this code is still far from the stated goal and currently just implem
 The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
 
 * The bare-bones example model is described as a JSON in ```input/models.json```
-* An example template that generates a create table DDL is the file ```templates/dedicated-pool/create_table.sql```
-* The output is a file for each DDL written in the directory ```output/dedicated-pool```
+* An example template that generates a create schema DDL is the file ```templates/{implementation}/create_schema.sql```
+* An example template that generates a create table DDL is the file ```templates/{implementation}/create_table.sql```
+* The output is a file for each DDL written in the directory ```output/{implementation}```
 
 ## Getting started
 
 * Clone the repository
 * Create a virtual environment and add the libraries from requirements.txt
 * Run main.py
+* To run an example for a duckdb deployment you can run ```duckdb_deploy.py``` if you ran the duckdb example in main. The resulting database can be found in ```output/duckdb/duckdb.db```, which can be browsed with [dbeaver](https://duckdb.org/docs/guides/sql_editors/dbeaver.html).
 
 ## Resources
 
