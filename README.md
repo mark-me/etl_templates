@@ -7,11 +7,12 @@ Be warned: this code is still far from the stated goal and currently just implem
 The configuration for model input and templating can be adapted in ```config.yml```. The purpose of a making the directory for templates configurable is that we can add templates for multiple database implementations that each generate different DDL outputs.
 
 * The bare-bones example theorethical model is described as a JSON in ```input/models.json```, but need to be replaced by  [PowerDesigner XML's. See the section [Sample XML conversion](#sample-xml-conversion)
-* An example template that generates a create schema DDL is the file ```templates/{implementation}/create_schema.sql```
-* An example template that generates a create table DDL is the file ```templates/{implementation}/create_table.sql```
+* The [Jinja templating engine](https://jinja.palletsprojects.com/en/stable/) is used to generate implementations.
+  * An example template that generates a create schema DDL is the file ```templates/{implementation}/create_schema.sql```
+  * An example template that generates a create table DDL is the file ```templates/{implementation}/create_table.sql```
 * The output is a file for each DDL written in the directory ```output/{implementation}```
 
-Logs are written as JSON in the terminal and to log.json.
+Logs are written as JSON in the terminal and to log.json. The logging configuration is implemented in the file ```logging_config.py```.
 
 ## Getting started
 
@@ -24,10 +25,7 @@ Logs are written as JSON in the terminal and to log.json.
 
 The current code is based on my own sample data structure, but we want to move to PowerDesigner generated model data. As a starting point the [example model](https://generate.x-breeze.com/docs/3.1/Examples/) XML's from [CrossBreeze](https://crossbreeze.nl/) are added to the repository (```input/model_source.xml``` and ```input/model_dwh.xml```). The script ```xml_to_json.py``` can be used to convert them to more human readable JSON to analyze the data to be used for this project.
 
-## Resources
-
-* Documentation on how to create templates using the [Jinja templating engine](https://jinja.palletsprojects.com/en/stable/)
-* Reading XML and turning them into [dictionaries](https://realpython.com/python-dicts/): [xmltodict](https://pypi.org/project/xmltodict/)
+[xmltodict](https://pypi.org/project/xmltodict/) is used to convert XML into Python [dictionaries](https://realpython.com/python-dicts/), which in turn can be written to a JSON file.
 
 ## Future developments
 
