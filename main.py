@@ -7,6 +7,7 @@ import yaml
 from jinja2 import Template
 import xmltodict
 
+
 def main(type_template: str, models_input: str):
     """Creates the DDL's
 
@@ -25,15 +26,25 @@ def main(type_template: str, models_input: str):
     Path(dir_output).mkdir(parents=True, exist_ok=True)
 
     # Generation
+    # Create schema
+    with open(dir_template + "create_schema.sql", "r") as file:
+        ddl_create_schema = file.read() # Open template
     for schema in models["schemas"]:
+        # Create schema DDL
+        ddl_statement = Template(
+            ddl_create_schema, trim_blocks=True, lstrip_blocks=True
+        ).render(schema=schema)
+        file_output = dir_output + schema["name"] + ".sql"
+        with open(file_output, "w") as file_ddl:
+            file_ddl.write(ddl_statement)
 
         # Creating table DDL's
-        with open(dir_template + "create_table.sql", 'r') as file:
+        with open(dir_template + "create_table.sql", "r") as file:
             ddl_create_table = file.read()
         for table in schema["tables"]:
-            ddl_statement = Template(ddl_create_table, trim_blocks=True, lstrip_blocks=True).render(
-                schema=schema, table=table, columns=table["columns"]
-            )
+            ddl_statement = Template(
+                ddl_create_table, trim_blocks=True, lstrip_blocks=True
+            ).render(schema=schema, table=table, columns=table["columns"])
             file_output = dir_output + schema["name"] + "_" + table["name"] + ".sql"
             with open(file_output, "w") as file_ddl:
                 file_ddl.write(ddl_statement)
@@ -42,8 +53,9 @@ def main(type_template: str, models_input: str):
         # Updating mapping load
         # Creating stored procedures
 
+
 def xml_to_dict(file_xml: str) -> dict:
-    """ Converting XML files describing models to Python dictionaries
+    """Converting XML files describing models to Python dictionaries
 
     Args:
         file_xml (str): The path to a XML file
@@ -58,8 +70,9 @@ def xml_to_dict(file_xml: str) -> dict:
     pprint.pprint(dict_doc)
     return dict_doc
 
+
 if __name__ == "__main__":
-    with open('config.yml', 'r') as file:
+    with open("config.yml", "r") as file:
         config = yaml.safe_load(file)
     main(type_template=config["templates"], models_input=config["models_input"])
-    pydoc.writedoc('main')
+    pydoc.writedoc("main")
