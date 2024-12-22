@@ -20,6 +20,10 @@ Logs are written as JSON in the terminal and to log.json.
 * Run ```main.py```
 * To run an example for a duckdb deployment you can run ```duckdb_deploy.py``` after you ran the duckdb example in main. The resulting database can be found in ```output/duckdb/duckdb.db```, which can be browsed with [dbeaver](https://duckdb.org/docs/guides/sql_editors/dbeaver.html).
 
+### Sample XML conversion
+
+The current code is based on my own sample data structure. The [example model](https://generate.x-breeze.com/docs/3.1/Examples/) XML's from CrossBreeze are added to the repository. The script ```xml_to_json.py``` can be used to convert them to more human readable JSON to analyze the data to be used for this project.
+
 ## Resources
 
 * Templating engine: [jinja](https://jinja.palletsprojects.com/en/stable/)
