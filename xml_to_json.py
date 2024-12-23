@@ -39,8 +39,14 @@ def strip_pd_document(file_powerdesigner: str):
     directory = Path("output")
     directory.mkdir(parents=True, exist_ok=True)
     dict_powerdesigner = xml_to_dict(file_powerdesigner)
+
+    # Set new root te dispose of unnecessary data
     dict_model = dict_powerdesigner["Model"]["o:RootObject"]["c:Children"]["o:Model"]
+
+    # Remove redundant JSON sections
     lst_redundant = ["c:GeneratedModels", "c:ExtendedModelDefinitions", "c:LogicalDiagrams", "c:DefaultDiagram", "c:DefaultExtendedModelDefinition"]
+
+    # Remove redundant attributes
     dict_model = {key: dict_model[key] for key in dict_model if key not in lst_redundant}
     dict_model = remove_a_key(dict_model, "a:CreationDate")
     dict_model = remove_a_key(dict_model, "a:ModificationDate")
