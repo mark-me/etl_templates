@@ -1,6 +1,8 @@
 import json
+from pathlib import Path
 
 import xmltodict
+
 
 def xml_to_dict(file_xml: str) -> dict:
     """Converting XML files describing models to Python dictionaries
@@ -18,14 +20,51 @@ def xml_to_dict(file_xml: str) -> dict:
 
     return dict_data
 
+
+def remove_a_key(d, remove_key):
+    if isinstance(d, dict):
+        for key in list(d.keys()):
+            if key == remove_key:
+                del d[key]
+            else:
+                remove_a_key(d[key], remove_key)
+        return d
+    elif isinstance(d, list):
+        for i in range(len(d)):
+            d[i] = remove_a_key(d[i], remove_key)
+        return d
+
+
+def strip_pd_document(file_powerdesigner: str):
+    directory = Path("output")
+    directory.mkdir(parents=True, exist_ok=True)
+    dict_powerdesigner = xml_to_dict(file_powerdesigner)
+    dict_model = dict_powerdesigner["Model"]["o:RootObject"]["c:Children"]["o:Model"]
+    lst_redundant = ["c:GeneratedModels", "c:ExtendedModelDefinitions", "c:LogicalDiagrams", "c:DefaultDiagram", "c:DefaultExtendedModelDefinition"]
+    dict_model = {key: dict_model[key] for key in dict_model if key not in lst_redundant}
+    dict_model = remove_a_key(dict_model, "a:CreationDate")
+    dict_model = remove_a_key(dict_model, "a:ModificationDate")
+    dict_model = remove_a_key(dict_model, "a:Creator")
+    dict_model = remove_a_key(dict_model, "a:Modifier")
+
+    with open("output/model_pd.json", "w") as fp:
+        json.dump(dict_model, fp, indent=4)
+
+
 def main():
+    directory = Path("output")
+    directory.mkdir(parents=True, exist_ok=True)
+    dict_model_source = xml_to_dict("input\Douane CL LDM.ldm")
+    with open("output/Douane CL LDM.json", "w") as fp:
+        json.dump(dict_model_source, fp, indent=4)
     dict_model_source = xml_to_dict("input/model_source.xml")
-    with open('output/model_source.json', 'w') as fp:
+    with open("output/model_source.json", "w") as fp:
         json.dump(dict_model_source, fp, indent=4)
     dict_model_dwh = xml_to_dict("input/model_dwh.xml")
-    with open('output/model_dwh.json', 'w') as fp:
+    with open("output/model_dwh.json", "w") as fp:
         json.dump(dict_model_dwh, fp, indent=4)
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    strip_pd_document(file_powerdesigner="input\Douane CL LDM.ldm")
