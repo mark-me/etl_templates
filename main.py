@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 import pydoc
 
 from jinja2 import Environment, FileSystemLoader
@@ -19,7 +20,10 @@ def main(type_template: str, models_input: str):
     """
     logger.info(f"Writing implementation for {type_template}")
     dir_template = "templates/" + type_template + "/"
+    # Directories for output
     dir_output = "output/" + type_template + "/"
+    directory = Path(dir_output)
+    directory.mkdir(parents=True, exist_ok=True)
 
     # Loading templates
     environment = Environment(
