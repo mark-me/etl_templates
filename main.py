@@ -1,9 +1,9 @@
 import json
 import logging
 import pydoc
-import yaml
 
 from jinja2 import Environment, FileSystemLoader
+import yaml
 
 import logging_config
 
