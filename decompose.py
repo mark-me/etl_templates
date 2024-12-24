@@ -3,7 +3,7 @@ import json
 
 class ModelObjects:
     def __init__(self, dict_pd: dict):
-        self.id = dict_pd["a:ObjectID"]
+        self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
         self.code = dict_pd["a:Code"]
 
@@ -16,13 +16,18 @@ class SourceModel(ModelObjects):
         self.id_class_target = dict_pd["a:TargetClassID"]
 
 
-class UserDefinedType:
+class Domain(ModelObjects):
     def __init__(self, dict_pd):
-        self.id = dict_pd["@internalId"]
-        self.name = dict_pd["@name"]
-        self.datatype = dict_pd["@datatype"]
-        self.length = dict_pd["@length"]
-        self.datatype_full = dict_pd["@fulldatatype"]
+        super().__init__(dict_pd)
+        self.datatype = dict_pd["a:DataType"]
+        if "a:Length" in dict_pd:
+            self.length = dict_pd["a:Length"]
+        else:
+            self.length = None
+        if "a:Precision" in dict_pd:
+            self.precision = dict_pd["a:Precision"]
+        else:
+            self.precision = None
 
 
 class Attribute(ModelObjects):
@@ -80,58 +85,105 @@ class Shortcut(ModelObjects):
                 self.dict_attributes[attribute.id] = attribute
 
 
+class MappingFeature:
+    def __init__(self, dict_pd: dict, dict_features: dict, dict_shortcuts: dict):
+        self.id = dict_pd["@Id"]
+        self.extended_collection = dict_pd["c:ExtendedCollections"]
+
+        source_features_pd = dict_pd["c:SourceFeatures"]
+        self.entity_source = {}
+        self.shortcut_source = {}
+        if isinstance(source_features_pd, dict):
+            if "o:Shortcut" in source_features_pd:
+                id_shortcut = source_features_pd["o:Shortcut"]["@Ref"]
+                self.shortcut_source[id_shortcut] = dict_shortcuts[id_shortcut]
+            if "o:Entity" in source_features_pd:
+                id_shortcut = source_features_pd["o:Entity"]["@Ref"]
+                self.shortcut_source[id_shortcut] = dict_shortcuts[id_shortcut]
+        if isinstance(source_features_pd, list):
+            print("List of sources")
+
+
 class Mapping(ModelObjects):
-    def __init__(self, dict_mapping: dict, dict_pd: dict):
+    def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
         super().__init__(dict_pd)
         print("Mapping: " + self.name)
-        if "a:Stereotype" in dict_mapping:
-            self.stereotype = dict_mapping["a:Stereotype"]
+        if "a:Stereotype" in dict_pd:
+            self.stereotype = dict_pd["a:Stereotype"]
         else:
             self.stereotype = None
 
-        id_entity = dict_mapping["c:Classifier"]["o:Entity"]["@Ref"]
-        entity = dict_entities[id_entity]
+        # Target entity
+        id_entity = dict_pd["c:Classifier"]["o:Entity"]["@Ref"]
+        self.entity_target = dict_entities[id_entity]
+
+        # Entity sources
+        self.entity_sources = {}
+        lst_id_entity = [
+            sub["@Ref"] for sub in dict_pd["c:SourceClassifiers"]["o:Entity"]
+        ]
+        for id_entity in lst_id_entity:
+            self.entity_sources[id_entity] = dict_entities[id_entity]
+
+        # Features
+        pd_features = dict_pd["c:StructuralFeatureMaps"][
+            "o:DefaultStructuralFeatureMapping"
+        ]
+        self.lst_features = []
+        for pd_feature in pd_features:
+            self.lst_features.append(
+                MappingFeature(pd_feature, dict_shortcuts=dict_shortcuts)
+            )
+
         test = "me"
 
 
-with open("output/example_dwh.json") as json_file:
-    models = json.load(json_file)
+def load_model(file_model: str):
+    with open(file_model) as json_file:
+        models = json.load(json_file)
+
+    lst_pd_datasources = models["c:DataSources"]
+
+    lst_pd_sourcemodels = ["c:SourceModels"]
+
+    lst_pd_shortcut = models["c:Entities"]["o:Shortcut"]
+    with open("output/lst_pd_shortcut.json", "w") as fp:
+        json.dump(lst_pd_shortcut, fp, indent=4)
+
+    # lst_mappings = models["c:Mappings"]
+    # with open("output/lst_mappings.json", "w") as fp:
+    #     json.dump(lst_mappings, fp, indent=4)
+
+    lst_pd_domains = models["c:Domains"]["o:Domain"]
+    dict_domains = {}
+    for pd_domain in lst_pd_domains:
+        domain = Domain(pd_domain)
+        dict_domains[domain.id] = domain
+
+    lst_pd_entity = models["c:Entities"]["o:Entity"]
+    dict_entities = {}
+    for pd_entity in lst_pd_entity:
+        # Extract usable entity
+        entity = Entity(pd_entity)
+        dict_entities[entity.id] = entity
+
+    lst_pd_shortcuts = models["c:Entities"]["o:Shortcut"]
+    dict_shortcuts = {}
+    for pd_shortcut in lst_pd_shortcuts:
+        shortcut = Shortcut(pd_shortcut)
+        dict_shortcuts[shortcut.id] = shortcut
+
+    lst_pd_mappings = models["c:Mappings"]["o:DefaultObjectMapping"]
+    lst_mappings = []
+    for mapping in lst_pd_mappings:
+        lst_mappings.append(
+            Mapping(mapping, dict_entities, dict_shortcuts=dict_shortcuts)
+        )
+        lst_mappings.append(
+            Mapping(mapping, dict_entities=dict_entities, dict_shortcuts=dict_shortcuts)
+        )
 
 
-# lst_pd_datasources = models["c:DataSources"]
-
-lst_pd_shortcut = models["c:Entities"]["o:Shortcut"]
-with open("output/lst_pd_shortcut.json", "w") as fp:
-    json.dump(lst_pd_shortcut, fp, indent=4)
-# lst_pd_sourcemodels = ["c:SourceModels"]
-
-# lst_mappings = models["c:Mappings"]
-# with open("output/lst_mappings.json", "w") as fp:
-#     json.dump(lst_mappings, fp, indent=4)
-
-lst_pd_usertypes = models["userDefinedTypes"]["userDefinedType"]
-dict_usertypes = {}
-for pd_usertype in lst_pd_usertypes:
-    usertype = Entity(pd_usertype)
-    dict_usertypes[usertype.id] = usertype
-
-
-lst_pd_entity = models["c:Entities"]["o:Entity"]
-dict_entities = {}
-for pd_entity in lst_pd_entity:
-    # Extract usable entity
-    entity = Entity(pd_entity)
-    dict_entities[entity.id] = entity
-
-lst_pd_shortcuts = models["c:Entities"]["o:Shortcut"]
-dict_shortcuts = {}
-for pd_shortcut in lst_pd_shortcuts:
-    shortcut = Shortcut(pd_shortcut)
-    dict_shortcuts[shortcut.id] = shortcut
-
-lst_pd_mappings = models["c:Mappings"]["o:DefaultObjectMapping"]
-lst_mappings = []
-for mapping in lst_pd_mappings:
-    lst_mappings.append(Mapping(mapping, dict_entities))
-
-print("Done")
+if __name__ == "__main__":
+    load_model(file_model="output/example_dwh.json")
+    print("Done")

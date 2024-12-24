@@ -48,10 +48,10 @@ def strip_pd_document(file_powerdesigner: str, file_output: str):
         "c:GeneratedModels",
         "c:GenerationOrigins",
         "c:ExtendedModelDefinitions",
-        "c:LogicalDiagrams",
-        "c:DefaultDiagram",
+        #"c:LogicalDiagrams",
+        #"c:DefaultDiagram",
         "c:DefaultExtendedModelDefinition",
-        "c:TargetModels",
+        #"c:TargetModels",
     ]
 
     # Remove redundant attributes
