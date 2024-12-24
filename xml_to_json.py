@@ -46,6 +46,7 @@ def strip_pd_document(file_powerdesigner: str, file_output: str):
     # Remove redundant JSON sections
     lst_redundant = [
         "c:GeneratedModels",
+        "c:GenerationOrigins",
         "c:ExtendedModelDefinitions",
         "c:LogicalDiagrams",
         "c:DefaultDiagram",
@@ -61,6 +62,7 @@ def strip_pd_document(file_powerdesigner: str, file_output: str):
     dict_model = remove_a_key(dict_model, "a:ModificationDate")
     dict_model = remove_a_key(dict_model, "a:Creator")
     dict_model = remove_a_key(dict_model, "a:Modifier")
+    dict_model = remove_a_key(dict_model, "a:History")
 
     with open("output/" + file_output, "w") as fp:
         json.dump(dict_model, fp, indent=4)
@@ -82,6 +84,5 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    strip_pd_document(file_powerdesigner="input\Douane CL LDM.ldm", file_output="model_pd.json")
     strip_pd_document(file_powerdesigner="input\ExampleDWH.ldm", file_output="example_dwh.json")
-    strip_pd_document(file_powerdesigner="input\ExampleSource.ldm", file_output="example_scurce.json")
+    strip_pd_document(file_powerdesigner="input\ExampleSource.ldm", file_output="example_source.json")
