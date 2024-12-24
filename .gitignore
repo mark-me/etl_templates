@@ -180,4 +180,3 @@ output/*
 log.json*
 
 # Sensitive information
-input/*.ldm

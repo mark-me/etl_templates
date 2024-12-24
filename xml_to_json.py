@@ -35,7 +35,7 @@ def remove_a_key(d, remove_key):
         return d
 
 
-def strip_pd_document(file_powerdesigner: str):
+def strip_pd_document(file_powerdesigner: str, file_output: str):
     directory = Path("output")
     directory.mkdir(parents=True, exist_ok=True)
     dict_powerdesigner = xml_to_dict(file_powerdesigner)
@@ -62,7 +62,7 @@ def strip_pd_document(file_powerdesigner: str):
     dict_model = remove_a_key(dict_model, "a:Creator")
     dict_model = remove_a_key(dict_model, "a:Modifier")
 
-    with open("output/model_pd.json", "w") as fp:
+    with open("output/" + file_output, "w") as fp:
         json.dump(dict_model, fp, indent=4)
 
 
@@ -82,4 +82,6 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    strip_pd_document(file_powerdesigner="input\Douane CL LDM.ldm")
+    strip_pd_document(file_powerdesigner="input\Douane CL LDM.ldm", file_output="model_pd.json")
+    strip_pd_document(file_powerdesigner="input\ExampleDWH.ldm", file_output="example_dwh.json")
+    strip_pd_document(file_powerdesigner="input\ExampleSource.ldm", file_output="example_scurce.json")
