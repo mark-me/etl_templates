@@ -44,10 +44,19 @@ def strip_pd_document(file_powerdesigner: str):
     dict_model = dict_powerdesigner["Model"]["o:RootObject"]["c:Children"]["o:Model"]
 
     # Remove redundant JSON sections
-    lst_redundant = ["c:GeneratedModels", "c:ExtendedModelDefinitions", "c:LogicalDiagrams", "c:DefaultDiagram", "c:DefaultExtendedModelDefinition"]
+    lst_redundant = [
+        "c:GeneratedModels",
+        "c:ExtendedModelDefinitions",
+        "c:LogicalDiagrams",
+        "c:DefaultDiagram",
+        "c:DefaultExtendedModelDefinition",
+        "c:TargetModels",
+    ]
 
     # Remove redundant attributes
-    dict_model = {key: dict_model[key] for key in dict_model if key not in lst_redundant}
+    dict_model = {
+        key: dict_model[key] for key in dict_model if key not in lst_redundant
+    }
     dict_model = remove_a_key(dict_model, "a:CreationDate")
     dict_model = remove_a_key(dict_model, "a:ModificationDate")
     dict_model = remove_a_key(dict_model, "a:Creator")
