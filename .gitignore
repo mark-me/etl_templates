@@ -178,3 +178,6 @@ output/*
 
 # Exclude logging
 log.json*
+
+# Sensitive information
+input/*.ldm
