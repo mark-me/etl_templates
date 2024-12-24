@@ -71,9 +71,6 @@ def strip_pd_document(file_powerdesigner: str, file_output: str):
 def main():
     directory = Path("output")
     directory.mkdir(parents=True, exist_ok=True)
-    dict_model_source = xml_to_dict("input\Douane CL LDM.ldm")
-    with open("output/Douane CL LDM.json", "w") as fp:
-        json.dump(dict_model_source, fp, indent=4)
     dict_model_source = xml_to_dict("input/model_source.xml")
     with open("output/model_source.json", "w") as fp:
         json.dump(dict_model_source, fp, indent=4)
@@ -84,5 +81,5 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    strip_pd_document(file_powerdesigner="input\ExampleDWH.ldm", file_output="example_dwh.json")
-    strip_pd_document(file_powerdesigner="input\ExampleSource.ldm", file_output="example_source.json")
+    strip_pd_document(file_powerdesigner="input/ExampleDWH.ldm", file_output="example_dwh.json")
+    strip_pd_document(file_powerdesigner="input/ExampleSource.ldm", file_output="example_source.json")

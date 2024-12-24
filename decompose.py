@@ -8,6 +8,23 @@ class ModelObjects:
         self.code = dict_pd["a:Code"]
 
 
+class SourceModel(ModelObjects):
+    def __init__(self, dict_pd):
+        super().__init__(dict_pd)
+        self.stereotype_target = dict_pd[" a:TargetStereotype"]
+        self.id_target = dict_pd["a:TargetID"]
+        self.id_class_target = dict_pd["a:TargetClassID"]
+
+
+class UserDefinedType:
+    def __init__(self, dict_pd):
+        self.id = dict_pd["@internalId"]
+        self.name = dict_pd["@name"]
+        self.datatype = dict_pd["@datatype"]
+        self.length = dict_pd["@length"]
+        self.datatype_full = dict_pd["@fulldatatype"]
+
+
 class Attribute(ModelObjects):
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
@@ -83,12 +100,21 @@ with open("output/example_dwh.json") as json_file:
 
 # lst_pd_datasources = models["c:DataSources"]
 
-# lst_pd_shortcut = models["c:Entities"]["o:Shortcut"]
+lst_pd_shortcut = models["c:Entities"]["o:Shortcut"]
+with open("output/lst_pd_shortcut.json", "w") as fp:
+    json.dump(lst_pd_shortcut, fp, indent=4)
 # lst_pd_sourcemodels = ["c:SourceModels"]
 
 # lst_mappings = models["c:Mappings"]
 # with open("output/lst_mappings.json", "w") as fp:
 #     json.dump(lst_mappings, fp, indent=4)
+
+lst_pd_usertypes = models["userDefinedTypes"]["userDefinedType"]
+dict_usertypes = {}
+for pd_usertype in lst_pd_usertypes:
+    usertype = Entity(pd_usertype)
+    dict_usertypes[usertype.id] = usertype
+
 
 lst_pd_entity = models["c:Entities"]["o:Entity"]
 dict_entities = {}
