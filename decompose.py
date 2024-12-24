@@ -1,10 +1,15 @@
 import json
+import logging
 
+import logging_config
+
+logger = logging.getLogger(__name__)
 
 class ModelObjects:
     def __init__(self, dict_pd: dict):
         self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
+        logger.info(type(self).__name__ + ": " + self.name)
         self.code = dict_pd["a:Code"]
 
 
@@ -33,7 +38,8 @@ class Domain(ModelObjects):
 class Attribute(ModelObjects):
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
-        print("-- Attr: " + self.name)
+        self.id_table = dict_pd["id_table"]
+        self.name_table = dict_pd["name_table"]
         if "a:Stereotype" in dict_pd:
             self.stereotype = dict_pd["a:Stereotype"]
         else:
@@ -51,14 +57,19 @@ class Attribute(ModelObjects):
 class Entity(ModelObjects):
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
-        print("Entity: " + self.name)
+        # Setting attributes
         pd_attributes = dict_pd["c:Attributes"]["o:EntityAttribute"]
         self.dict_attributes = {}
         if isinstance(pd_attributes, list):
             for pd_attribute in pd_attributes:
+                pd_attribute["id_table"] = self.id
+                pd_attribute["name_table"] = self.name
                 attribute = Attribute(pd_attribute)
+
                 self.dict_attributes[attribute.id] = attribute
         elif isinstance(pd_attributes, dict):
+            pd_attributes["id_table"] = self.id
+            pd_attributes["name_table"] = self.name
             attribute = Attribute(pd_attributes)
             self.dict_attributes[attribute.id] = attribute
 
@@ -66,13 +77,12 @@ class Entity(ModelObjects):
 class ShortcutAttributes(ModelObjects):
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
-        print("-- Shortcut attr: " + self.name)
 
 
 class Shortcut(ModelObjects):
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
-        print("Shortcut: " + self.name)
+        # Setting attributes
         if "c:SubShortcuts" in dict_pd:
             pd_attributes = dict_pd["c:SubShortcuts"]["o:Shortcut"]
             self.dict_attributes = {}
