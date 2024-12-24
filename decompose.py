@@ -5,6 +5,7 @@ import logging_config
 
 logger = logging.getLogger(__name__)
 
+
 class ModelObjects:
     def __init__(self, dict_pd: dict):
         self.id = dict_pd["@Id"]
@@ -102,7 +103,7 @@ class Shortcut(ModelObjects):
 
 
 class MappingFeature:
-    def __init__(self, dict_pd: dict, dict_features: dict, dict_shortcuts: dict):
+    def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
         self.id = dict_pd["@Id"]
         self.extended_collection = dict_pd["c:ExtendedCollections"]
 
@@ -135,11 +136,26 @@ class Mapping(ModelObjects):
 
         # Entity sources
         self.entity_sources = {}
-        lst_id_entity = [
-            sub["@Ref"] for sub in dict_pd["c:SourceClassifiers"]["o:Entity"]
-        ]
-        for id_entity in lst_id_entity:
-            self.entity_sources[id_entity] = dict_entities[id_entity]
+        pd_entities = dict_pd["c:SourceClassifiers"]["o:Entity"]
+        if len(pd_entities) > 0:
+            lst_id_entity = [sub["@Ref"] for sub in pd_entities]
+            if isinstance(lst_id_entity, list):
+                for id_entity in lst_id_entity:
+                    self.entity_sources[id_entity] = dict_entities[id_entity]
+            elif isinstance(lst_id_entity, dict):
+                self.entity_sources[id_entity] = dict_entities[id_entity]
+
+        # Shortcut sources
+        self.shortcut_sources = {}
+        pd_shortcuts = dict_pd["c:SourceClassifiers"]["o:Shortcut"]
+        if len(pd_shortcuts) > 0:
+
+            if isinstance(pd_shortcuts, list):
+                for id_shortcut in pd_shortcuts:
+                    self.shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
+            elif isinstance(pd_shortcuts, dict):
+                id_shortcut = pd_shortcuts["@Ref"]
+                self.shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
 
         # Features
         pd_features = dict_pd["c:StructuralFeatureMaps"][
@@ -148,7 +164,11 @@ class Mapping(ModelObjects):
         self.lst_features = []
         for pd_feature in pd_features:
             self.lst_features.append(
-                MappingFeature(pd_feature, dict_shortcuts=dict_shortcuts)
+                MappingFeature(
+                    pd_feature,
+                    dict_entities=self.entity_sources,
+                    dict_shortcuts=dict_shortcuts,
+                )
             )
 
         test = "me"
