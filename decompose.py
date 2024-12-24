@@ -77,6 +77,8 @@ class Entity(ModelObjects):
 class ShortcutAttributes(ModelObjects):
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
+        self.id_shortcut = dict_pd["id_shortcut"]
+        self.name_shortcut = dict_pd["name_shortcut"]
 
 
 class Shortcut(ModelObjects):
@@ -88,9 +90,13 @@ class Shortcut(ModelObjects):
             self.dict_attributes = {}
             if isinstance(pd_attributes, list):
                 for pd_attribute in pd_attributes:
+                    pd_attribute["id_shortcut"] = self.id
+                    pd_attribute["name_shortcut"] = self.name
                     attribute = ShortcutAttributes(pd_attribute)
                     self.dict_attributes[attribute.id] = attribute
             elif isinstance(pd_attributes, dict):
+                pd_attribute["id_shortcut"] = self.id
+                pd_attribute["name_shortcut"] = self.name
                 attribute = ShortcutAttributes(pd_attribute)
                 self.dict_attributes[attribute.id] = attribute
 
