@@ -6,6 +6,42 @@ import logging_config
 logger = logging.getLogger(__name__)
 
 
+class Model:
+    def __init__(self, file_pd_ldm: str):
+        self.file_pd_ldm = file_pd_ldm
+        with open(file_pd_ldm) as json_file:
+            models = json.load(json_file)
+
+        self.lst_pd_datasources = models["c:DataSources"]
+        self.lst_pd_source_models = ["c:SourceModels"]
+        self.lst_pd_mappings = models["c:Mappings"]["o:DefaultObjectMapping"]
+
+        self.dict_domains = self.extract(models["c:Domains"]["o:Domain"], type_object = "domain")
+        self.dict_entities = self.extract(models["c:Entities"]["o:Entity"], type_object = "entity")
+        self.dict_shortcuts = self.extract(models["c:Entities"]["o:Shortcut"], type_object="shortcut")
+
+        self.lst_mappings = []
+        for mapping in self.lst_pd_mappings:
+            self.lst_mappings.append(
+                Mapping(mapping, self.dict_entities, self.dict_shortcuts)
+            )
+            self.lst_mappings.append(
+                Mapping(mapping, self.dict_entities, self.dict_shortcuts)
+            )
+
+    def extract(self, pd_objects: dict, type_object: str):
+        dict_result = {}
+        for pd_object in pd_objects:
+            if type_object == "domain":
+                object = Domain(pd_object)
+            elif type_object == "entity":
+                object = Entity(pd_object)
+            elif type_object == "shortcut":
+                object = Shortcut(pd_object)
+            dict_result[object.id] = object
+        return dict_result
+
+
 class ModelObjects:
     """Abstract class to fill all common denominators from PowerDesigner
     * id = Identifier
@@ -183,8 +219,6 @@ class Mapping(ModelObjects):
                 MappingFeature(pd_feature, dict_attributes=dict_attrs)
             )
 
-        test = "me"
-
     def find_entity_sources(self, dict_pd: dict, dict_entities: dict) -> dict:
         entity_sources = {}
         if "o:Entity" in dict_pd["c:SourceClassifiers"]:
@@ -227,49 +261,7 @@ class Mapping(ModelObjects):
 
 
 def load_model(file_model: str):
-    with open(file_model) as json_file:
-        models = json.load(json_file)
-
-    lst_pd_datasources = models["c:DataSources"]
-
-    lst_pd_sourcemodels = ["c:SourceModels"]
-
-    lst_pd_shortcut = models["c:Entities"]["o:Shortcut"]
-    with open("output/lst_pd_shortcut.json", "w") as fp:
-        json.dump(lst_pd_shortcut, fp, indent=4)
-
-    # lst_mappings = models["c:Mappings"]
-    # with open("output/lst_mappings.json", "w") as fp:
-    #     json.dump(lst_mappings, fp, indent=4)
-
-    lst_pd_domains = models["c:Domains"]["o:Domain"]
-    dict_domains = {}
-    for pd_domain in lst_pd_domains:
-        domain = Domain(pd_domain)
-        dict_domains[domain.id] = domain
-
-    lst_pd_entity = models["c:Entities"]["o:Entity"]
-    dict_entities = {}
-    for pd_entity in lst_pd_entity:
-        # Extract usable entity
-        entity = Entity(pd_entity)
-        dict_entities[entity.id] = entity
-
-    lst_pd_shortcuts = models["c:Entities"]["o:Shortcut"]
-    dict_shortcuts = {}
-    for pd_shortcut in lst_pd_shortcuts:
-        shortcut = Shortcut(pd_shortcut)
-        dict_shortcuts[shortcut.id] = shortcut
-
-    lst_pd_mappings = models["c:Mappings"]["o:DefaultObjectMapping"]
-    lst_mappings = []
-    for mapping in lst_pd_mappings:
-        lst_mappings.append(
-            Mapping(mapping, dict_entities, dict_shortcuts=dict_shortcuts)
-        )
-        lst_mappings.append(
-            Mapping(mapping, dict_entities=dict_entities, dict_shortcuts=dict_shortcuts)
-        )
+    model = Model(file_pd_ldm=file_model)
 
 
 if __name__ == "__main__":
