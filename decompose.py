@@ -7,6 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 class ModelObjects:
+    """Abstract class to fill all common denominators from PowerDesigner
+        * id = Identifier
+        * name = Name
+        * code = Name?
+    """
     def __init__(self, dict_pd: dict):
         self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
@@ -15,6 +20,8 @@ class ModelObjects:
 
 
 class SourceModel(ModelObjects):
+    """ No clue
+    """
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
         self.stereotype_target = dict_pd[" a:TargetStereotype"]
@@ -23,6 +30,8 @@ class SourceModel(ModelObjects):
 
 
 class Domain(ModelObjects):
+    """Datatypes to be applied to attributes
+    """
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
         self.datatype = dict_pd["a:DataType"]
@@ -37,6 +46,8 @@ class Domain(ModelObjects):
 
 
 class Attribute(ModelObjects):
+    """ Entity attributes
+    """
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
         self.id_table = dict_pd["id_table"]
@@ -56,6 +67,8 @@ class Attribute(ModelObjects):
 
 
 class Entity(ModelObjects):
+    """ Entities
+    """
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
         # Setting attributes
@@ -76,6 +89,8 @@ class Entity(ModelObjects):
 
 
 class ShortcutAttributes(ModelObjects):
+    """ Attributes of shortcuts
+    """
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
         self.id_shortcut = dict_pd["id_shortcut"]
@@ -83,6 +98,8 @@ class ShortcutAttributes(ModelObjects):
 
 
 class Shortcut(ModelObjects):
+    """ An entity that is not part of the current model
+    """
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
         # Setting attributes
@@ -103,6 +120,8 @@ class Shortcut(ModelObjects):
 
 
 class MappingFeature:
+    """ Extraction process specification: how is the attribute populated?
+    """
     def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
         self.id = dict_pd["@Id"]
         self.extended_collection = dict_pd["c:ExtendedCollections"]
@@ -122,6 +141,8 @@ class MappingFeature:
 
 
 class Mapping(ModelObjects):
+    """ Extraction process specification: how is the entity populated?
+    """
     def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
         super().__init__(dict_pd)
         print("Mapping: " + self.name)
