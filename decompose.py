@@ -8,10 +8,11 @@ logger = logging.getLogger(__name__)
 
 class ModelObjects:
     """Abstract class to fill all common denominators from PowerDesigner
-        * id = Identifier
-        * name = Name
-        * code = Name?
+    * id = Identifier
+    * name = Name
+    * code = Name?
     """
+
     def __init__(self, dict_pd: dict):
         self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
@@ -20,8 +21,8 @@ class ModelObjects:
 
 
 class SourceModel(ModelObjects):
-    """ No clue
-    """
+    """No clue"""
+
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
         self.stereotype_target = dict_pd[" a:TargetStereotype"]
@@ -30,8 +31,8 @@ class SourceModel(ModelObjects):
 
 
 class Domain(ModelObjects):
-    """Datatypes to be applied to attributes
-    """
+    """Datatypes to be applied to attributes"""
+
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
         self.datatype = dict_pd["a:DataType"]
@@ -46,8 +47,8 @@ class Domain(ModelObjects):
 
 
 class Attribute(ModelObjects):
-    """ Entity attributes
-    """
+    """Entity attributes"""
+
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
         self.id_table = dict_pd["id_table"]
@@ -67,8 +68,8 @@ class Attribute(ModelObjects):
 
 
 class Entity(ModelObjects):
-    """ Entities
-    """
+    """Entities"""
+
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
         # Setting attributes
@@ -89,8 +90,8 @@ class Entity(ModelObjects):
 
 
 class ShortcutAttributes(ModelObjects):
-    """ Attributes of shortcuts
-    """
+    """Attributes of shortcuts"""
+
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
         self.id_shortcut = dict_pd["id_shortcut"]
@@ -98,14 +99,14 @@ class ShortcutAttributes(ModelObjects):
 
 
 class Shortcut(ModelObjects):
-    """ An entity that is not part of the current model
-    """
+    """An entity that is not part of the current model"""
+
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
+        self.dict_attributes = {}
         # Setting attributes
         if "c:SubShortcuts" in dict_pd:
             pd_attributes = dict_pd["c:SubShortcuts"]["o:Shortcut"]
-            self.dict_attributes = {}
             if isinstance(pd_attributes, list):
                 for pd_attribute in pd_attributes:
                     pd_attribute["id_shortcut"] = self.id
@@ -117,12 +118,14 @@ class Shortcut(ModelObjects):
                 pd_attribute["name_shortcut"] = self.name
                 attribute = ShortcutAttributes(pd_attribute)
                 self.dict_attributes[attribute.id] = attribute
+        else:
+            logger.error("Shortcut '" + self.name + "' has no attributes")
 
 
 class MappingFeature:
-    """ Extraction process specification: how is the attribute populated?
-    """
-    def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
+    """Extraction process specification: how is the attribute populated?"""
+
+    def __init__(self, dict_pd: dict, dict_attributes: dict):
         self.id = dict_pd["@Id"]
         self.extended_collection = dict_pd["c:ExtendedCollections"]
 
@@ -132,17 +135,17 @@ class MappingFeature:
         if isinstance(source_features_pd, dict):
             if "o:Shortcut" in source_features_pd:
                 id_shortcut = source_features_pd["o:Shortcut"]["@Ref"]
-                self.shortcut_source[id_shortcut] = dict_shortcuts[id_shortcut]
+                self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]
             if "o:Entity" in source_features_pd:
                 id_shortcut = source_features_pd["o:Entity"]["@Ref"]
-                self.shortcut_source[id_shortcut] = dict_shortcuts[id_shortcut]
-        if isinstance(source_features_pd, list):
-            print("List of sources")
+                self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]
+        elif isinstance(source_features_pd, list):
+            logger.error("MappingFeature list of sources")
 
 
 class Mapping(ModelObjects):
-    """ Extraction process specification: how is the entity populated?
-    """
+    """Extraction process specification: how is the entity populated?"""
+
     def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
         super().__init__(dict_pd)
         print("Mapping: " + self.name)
@@ -150,49 +153,77 @@ class Mapping(ModelObjects):
             self.stereotype = dict_pd["a:Stereotype"]
         else:
             self.stereotype = None
-
         # Target entity
         id_entity = dict_pd["c:Classifier"]["o:Entity"]["@Ref"]
         self.entity_target = dict_entities[id_entity]
-
-        # Entity sources
+        # Derive entity and shortcut sources
+        lst_source_ids = self.extract_source_ids(dict_pd=dict_pd)
         self.entity_sources = {}
-        pd_entities = dict_pd["c:SourceClassifiers"]["o:Entity"]
-        if len(pd_entities) > 0:
-            lst_id_entity = [sub["@Ref"] for sub in pd_entities]
-            if isinstance(lst_id_entity, list):
-                for id_entity in lst_id_entity:
-                    self.entity_sources[id_entity] = dict_entities[id_entity]
-            elif isinstance(lst_id_entity, dict):
-                self.entity_sources[id_entity] = dict_entities[id_entity]
-
-        # Shortcut sources
-        self.shortcut_sources = {}
-        pd_shortcuts = dict_pd["c:SourceClassifiers"]["o:Shortcut"]
-        if len(pd_shortcuts) > 0:
-
-            if isinstance(pd_shortcuts, list):
-                for id_shortcut in pd_shortcuts:
-                    self.shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
-            elif isinstance(pd_shortcuts, dict):
-                id_shortcut = pd_shortcuts["@Ref"]
-                self.shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
+        for id_source in lst_source_ids:
+            if id_source in dict_entities:
+                self.entity_sources[id_source] = dict_entities[id_source]
+            elif id_source in dict_shortcuts:
+                self.entity_sources[id_source] = dict_shortcuts[id_source]
+            else:
+                logger.error("Source entity or shortcut not found for " + id_source)
 
         # Features
+        # Unpack attributes so they can be matched to mapping features
+        lst_attrs = [
+            value.dict_attributes for key, value in self.entity_sources.items()
+        ]
+        dict_attrs = {k: v for e in lst_attrs for (k, v) in e.items()}
+
         pd_features = dict_pd["c:StructuralFeatureMaps"][
             "o:DefaultStructuralFeatureMapping"
         ]
         self.lst_features = []
         for pd_feature in pd_features:
             self.lst_features.append(
-                MappingFeature(
-                    pd_feature,
-                    dict_entities=self.entity_sources,
-                    dict_shortcuts=dict_shortcuts,
-                )
+                MappingFeature(pd_feature, dict_attributes=dict_attrs)
             )
 
         test = "me"
+
+    def find_entity_sources(self, dict_pd: dict, dict_entities: dict) -> dict:
+        entity_sources = {}
+        if "o:Entity" in dict_pd["c:SourceClassifiers"]:
+            pd_entities = dict_pd["c:SourceClassifiers"]["o:Entity"]
+            if len(pd_entities) > 0:
+                if isinstance(pd_entities, list):
+                    lst_id_entity = [sub["@Ref"] for sub in pd_entities]
+                    for id_entity in lst_id_entity:
+                        entity_sources[id_entity] = dict_entities[id_entity]
+                elif isinstance(pd_entities, dict):
+                    entity_sources[id_entity] = dict_entities[id_entity]
+        return entity_sources
+
+    def find_shortcut_sources(self, dict_pd: dict, dict_shortcuts: dict) -> dict:
+        shortcut_sources = {}
+        if "o:Shortcut" in dict_pd["c:SourceClassifiers"]:
+            pd_shortcuts = dict_pd["c:SourceClassifiers"]["o:Shortcut"]
+            if len(pd_shortcuts) > 0:
+                if isinstance(pd_shortcuts, list):
+                    for id_shortcut in pd_shortcuts:
+                        shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
+                elif isinstance(pd_shortcuts, dict):
+                    id_shortcut = pd_shortcuts["@Ref"]
+                    shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
+        return shortcut_sources
+
+    def extract_source_ids(self, dict_pd: dict) -> list:
+        lst_source_ids = []
+        pd_classifiers = dict_pd["c:SourceClassifiers"]
+        lst_source_types = ["o:Entity", "o:Shortcut"]
+        for source_type in lst_source_types:
+            if source_type in pd_classifiers:
+                pd_sources = pd_classifiers[source_type]
+                if len(pd_sources) > 0:
+                    if isinstance(pd_sources, list):
+                        lst_source_ids = lst_source_ids + [sub["@Ref"] for sub in pd_sources]
+                    elif isinstance(pd_sources, dict):
+                        lst_source_ids = lst_source_ids + [pd_sources["@Ref"]]
+        return lst_source_ids
 
 
 def load_model(file_model: str):
