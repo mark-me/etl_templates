@@ -123,6 +123,8 @@ class Entity(ModelObjects):
             pd_attributes["name_table"] = self.name
             attribute = Attribute(pd_attributes)
             self.dict_attributes[attribute.id] = attribute
+        else:
+            logger.error("Table '" + self.name + "' has no attributes")
 
 
 class ShortcutAttributes(ModelObjects):
