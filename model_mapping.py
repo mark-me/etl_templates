@@ -27,10 +27,8 @@ class Mapping(ModelObject):
         )
 
         # Joins
-        pd_objects = dict_pd["c:ExtendedCompositions"]['o:ExtendedComposition']
+        pd_objects = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"]
         self.dict_compositions = self.extract_compositions(pd_objects=pd_objects)
-        # with open("output/test.json", "w") as fp:
-        #     json.dump(pd_joins, fp, indent=4)
 
         # Features
         # Unpack attributes so they can be matched to mapping features
@@ -49,7 +47,7 @@ class Mapping(ModelObject):
     def extract_sources(
         self, pd_objects: dict, dict_entities: dict, dict_shortcuts: dict
     ) -> dict:
-        """Extract sources and fill with corresponding object data
+        """Extract sources and fill corresponding object attributes
 
         Args:
             pd_objects (dict): Part of the Power Designer document concerning mapping
@@ -90,13 +88,16 @@ class Mapping(ModelObject):
         if isinstance(pd_objects, dict):
             pd_objects = [pd_objects]
         for object in pd_objects:
-            composition = MappingComposition(dict_pd=object, dict_sources=self.dict_sources)
+            composition = MappingComposition(
+                dict_pd=object, dict_sources=self.dict_sources
+            )
             dict_compositions[composition.id] = composition
         return dict_compositions
 
 
 class MappingComposition(ModelObject):
     """Specification of the horizontal lineage"""
+
     def __init__(self, dict_pd, dict_sources: dict):
         super().__init__(dict_pd)
         self.dict_sources = dict_sources
@@ -109,24 +110,10 @@ class MappingComposition(ModelObject):
             clause = MappingCompositionClause(dict_pd=join, dict_sources=dict_sources)
             self.dict_clauses[clause.id] = clause
 
-        dict_from = {
-
-        }
-
-        dict_joins = {
-            "id": "oSmth",
-            "id_object": "oSmth",
-            "alias": "a1",
-            "type_join": "some_join",
-            "join_attributes": {
-                "attribute": "someAttribute",
-                "parent_alias": "entity",
-                "attribute_parent": "attribute",
-            },
-        }
 
 class MappingCompositionClause(ModelObject):
     """Represents how Entities or Shortcuts should be used when combining them (FROM, types of JOINS)"""
+
     def __init__(self, dict_pd: dict, dict_sources: dict):
         super().__init__(dict_pd)
         self.dict_sources = dict_sources
@@ -136,10 +123,9 @@ class MappingCompositionClause(ModelObject):
             self.stereotype = None
         # Creating an alias
         self.alias = self.name + "_" + self.id
-        self.join_type = self.extract_join_type(dict_pd['a:ExtendedAttributesText'])
-        if self.join_type == "FROM":
-            logger.debug(f"Composition clause '{self.join_type}' for '{self.name}'")
-        else:
+        self.join_type = self.extract_join_type(dict_pd["a:ExtendedAttributesText"])
+        logger.debug(f"Composition clause '{self.join_type}' for '{self.name}'")
+        if self.join_type != "FROM":
             lst_on_clauses = self.extract_on_clause(dict_pd)
 
         print("me")
@@ -163,9 +149,12 @@ class MappingCompositionClause(ModelObject):
         return join_type
 
     def extract_on_clause(self, dict_pd: dict) -> list:
-        id_source = dict_pd['c:ExtendedCollections']['o:ExtendedCollection']['c:Content']['o:Entity']['@Ref']
+        id_source = dict_pd["c:ExtendedCollections"]["o:ExtendedCollection"][
+            "c:Content"
+        ]["o:Entity"]["@Ref"]
         source = self.dict_sources[id_source]
         return [source]
+
 
 class MappingFeature:
     """Extraction process specification: how is the attribute populated?"""
