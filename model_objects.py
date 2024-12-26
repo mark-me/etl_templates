@@ -19,7 +19,7 @@ class Model:
         # Extract Data sources # TODO: Research role models["c:DataSources"]["o:DefaultDataSource"]
         pd_objects = [models["c:DataSources"]["o:DefaultDataSource"]]
         self.dict_datasource_models = self.extract(
-            type_object="datasource_models", pd_objects=pd_objects
+            type_object="datasource_model", pd_objects=pd_objects
         )
         # TODO: Research role models["c:SourceModels"]
         # Extract Domain data
@@ -62,7 +62,7 @@ class Model:
         """Create objects from model file data"""
         dict_result = {}
         for pd_object in pd_objects:
-            if type_object == "datasource_models":
+            if type_object == "datasource_model":
                 object = DataSourceModels(pd_object)
             elif type_object == "domain":
                 object = Domain(pd_object)
@@ -108,7 +108,9 @@ class Model:
         """
         dict_result = []
         if type_object == "datasource_models":
-            dict_result = self.dict_datasource_models.__dict__
+            dict_result = [
+                item.as_dict() for item in list(self.dict_datasource_models.values())
+            ]
         elif type_object == "domain":
             dict_result = [item.as_dict() for item in list(self.dict_domains.values())]
         elif type_object == "entity":
@@ -134,6 +136,9 @@ class ModelObjects:
         self.name = dict_pd["a:Name"]
         logger.debug(f"Created object {type(self).__name__}: {self.name}")
         self.code = dict_pd["a:Code"]
+
+    def as_dict(self) -> dict:
+        return self.__dict__
 
 
 class DataSourceModels(ModelObjects):
@@ -170,9 +175,6 @@ class Domain(ModelObjects):
             self.precision = dict_pd["a:Precision"]
         else:
             self.precision = None
-
-    def as_dict(self) -> dict:
-        return self.__dict__
 
 
 class Entity(ModelObjects):
@@ -294,7 +296,6 @@ class Mapping(ModelObjects):
 
     def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
         super().__init__(dict_pd)
-        print("Mapping: " + self.name)
         if "a:Stereotype" in dict_pd:
             self.stereotype = dict_pd["a:Stereotype"]
         else:
@@ -310,28 +311,42 @@ class Mapping(ModelObjects):
             dict_shortcuts=dict_shortcuts,
         )
 
+        # TODO: Union fills
+
+        # Joins
+        pd_test = pd_joins = dict_pd["c:ExtendedCompositions"]
+        pd_joins = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"][
+            "c:ExtendedComposition.Content"
+        ]["o:ExtendedSubObject"]
+        for join in pd_joins:
+            print(join)
+
+        dict_joins = {
+            "id": "oSmth",
+            "id_object": "oSmth",
+            "type_join": "some_join",
+            "join_attributes": {
+                "attribute": "someAttribute",
+                "parent": "entity",
+                "attribute_parent": "attribute",
+            },
+        }
+        # with open("output/test.json", "w") as fp:
+        #     json.dump(pd_joins, fp, indent=4)
+
         # Features
         # Unpack attributes so they can be matched to mapping features
-        lst_attributes = []
+        dict_attributes = {}
         for key in self.sources:
-            test = self.sources[key].as_dict()
-            lst_attributes = lst_attributes + test["attributes"]
+            source_attrs = self.sources[key].as_dict()["attributes"]
+            dict_attributes.update({attr["id"]: attr for attr in source_attrs})
 
-        lst_attrs = [
-            source["attributes"]
-            for id_source in self.sources
-            if "attributes" in self.sources[id_source].as_dict
-        ]
-        dict_attrs = {k: v for e in lst_attrs for (k, v) in e.items()}
-
-        # pd_features = dict_pd["c:StructuralFeatureMaps"][
-        #     "o:DefaultStructuralFeatureMapping"
-        # ]
-        # self.lst_features = []
-        # for pd_feature in pd_features:
-        #     self.lst_features.append(
-        #         MappingFeature(pd_feature, dict_attributes=dict_attrs)
-        #     )
+        # pd_feature_maps = dict_pd['c:StructuralFeatureMaps']['o:DefaultStructuralFeatureMapping']
+        # dict_features = {}
+        # for feature in pd_feature_maps:
+        #     dict_features[feature["@Id"]] = feature
+        # pd_data_source = dict_pd['c:DataSource']
+        print("me")
 
     def extract_sources(
         self, pd_objects: dict, dict_entities: dict, dict_shortcuts: dict
@@ -362,6 +377,11 @@ class Mapping(ModelObjects):
         return dict_sources
 
 
+class MappingJoin:
+    def __init__(self):
+        pass
+
+
 class MappingFeature:
     """Extraction process specification: how is the attribute populated?"""
 
@@ -386,5 +406,5 @@ class MappingFeature:
 if __name__ == "__main__":
     file_model = "output/example_dwh.json"
     model = Model(file_pd_ldm=file_model)
-    dict_test = model.save_objects_json(type_object="entity")
+    dict_test = model.save_objects_json(type_object="shortcut")
     print("Done")
