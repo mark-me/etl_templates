@@ -1,5 +1,8 @@
 import json
 import logging
+from pathlib import Path
+
+import xmltodict
 
 import logging_config
 
@@ -11,34 +14,99 @@ class Model:
         self.file_pd_ldm = file_pd_ldm
         with open(file_pd_ldm) as json_file:
             models = json.load(json_file)
+        # Extract Data sources # TODO: Research role models["c:DataSources"]["o:DefaultDataSource"]
+        pd_objects = [models["c:DataSources"]["o:DefaultDataSource"]]
+        self.dict_datasource_models = self.extract(
+            type_object="datasource_models", pd_objects=pd_objects
+        )
+        # TODO: Research role models["c:SourceModels"]
+        # Extract Domain data
+        # TODO: Link between attributes and domains
+        pd_objects = models["c:Domains"]["o:Domain"]
+        self.dict_domains = self.extract(type_object="domain", pd_objects=pd_objects)
+        # Extract entities
+        pd_objects = models["c:Entities"]["o:Entity"]
+        self.dict_entities = self.extract(type_object="entity", pd_objects=pd_objects)
+        # Extract shortcuts
+        pd_objects = models["c:Entities"]["o:Shortcut"]
+        self.dict_shortcuts = self.extract(
+            type_object="shortcut", pd_objects=pd_objects
+        )
+        # Extract mappings
+        # self.lst_pd_mappings = models["c:Mappings"]["o:DefaultObjectMapping"]
+        # self.lst_mappings = []
+        # for mapping in self.lst_pd_mappings:
+        #     self.lst_mappings.append(
+        #         Mapping(mapping, self.dict_entities, self.dict_shortcuts)
+        #     )
 
-        self.lst_pd_datasources = models["c:DataSources"]
-        self.lst_pd_source_models = ["c:SourceModels"]
-        self.lst_pd_mappings = models["c:Mappings"]["o:DefaultObjectMapping"]
+    def read_file_model(self, file_pd_ldm: str) -> dict:
+        """Converting XML files describing models to Python dictionaries
 
-        self.dict_domains = self.extract(models["c:Domains"]["o:Domain"], type_object = "domain")
-        self.dict_entities = self.extract(models["c:Entities"]["o:Entity"], type_object = "entity")
-        self.dict_shortcuts = self.extract(models["c:Entities"]["o:Shortcut"], type_object="shortcut")
+        Args:
+            file_xml (str): The path to a XML file
 
-        self.lst_mappings = []
-        for mapping in self.lst_pd_mappings:
-            self.lst_mappings.append(
-                Mapping(mapping, self.dict_entities, self.dict_shortcuts)
-            )
-            self.lst_mappings.append(
-                Mapping(mapping, self.dict_entities, self.dict_shortcuts)
-            )
+        Returns:
+            dict: The data converted to a dictionary
+        """
+        # Function not yet used, but candidate for reading XML file
+        with open(file_pd_ldm) as fd:
+            doc = fd.read()
+        dict_data = xmltodict.parse(doc)
 
-    def extract(self, pd_objects: dict, type_object: str):
+        return dict_data
+
+    def extract(self, type_object: str, pd_objects: dict):
+        """Create objects from model file data"""
         dict_result = {}
         for pd_object in pd_objects:
-            if type_object == "domain":
+            if type_object == "datasource_models":
+                object = DataSourceModels(pd_object)
+            elif type_object == "domain":
                 object = Domain(pd_object)
             elif type_object == "entity":
                 object = Entity(pd_object)
             elif type_object == "shortcut":
                 object = Shortcut(pd_object)
             dict_result[object.id] = object
+        return dict_result
+
+    def save_objects_json(self, type_object: str):
+        """Save a list of model objects as a JSON file
+
+        Args:
+            type_object (str): The type of model objects requested
+        """
+        # Automatic file name generation
+        file_json = Path(Path(self.file_pd_ldm).name).stem
+        file_json = f"output/{file_json}_{type_object}.json"
+        directory = Path("output")
+        directory.mkdir(parents=True, exist_ok=True)
+        # Extract and dump dictionaries
+        lst_objects = self.get_objects_dict(type_object=type_object)
+        with open(file_json, "w") as fp:
+            json.dump(lst_objects, fp, indent=4)
+
+    def get_objects_dict(self, type_object: str) -> list:
+        """Retrieve list of dictionaries of model objects
+
+        Args:
+            type_object (str): The type of model objects requested
+
+        Returns:
+            list: List of dictionaries
+        """
+        dict_result = []
+        if type_object == "datasource_models":
+            dict_result = self.dict_datasource_models.__dict__
+        elif type_object == "domain":
+            dict_result = [item.as_dict() for item in list(self.dict_domains.values())]
+        elif type_object == "entity":
+            dict_result = [item.as_dict() for item in list(self.dict_entities.values())]
+        elif type_object == "shortcut":
+            dict_result = [item.as_dict() for item in list(self.dict_shortcuts.values())]
+        else:
+            logger.error("Cannot create objects of unknown type " + type_object)
         return dict_result
 
 
@@ -54,6 +122,16 @@ class ModelObjects:
         self.name = dict_pd["a:Name"]
         logger.info(type(self).__name__ + ": " + self.name)
         self.code = dict_pd["a:Code"]
+
+
+class DataSourceModels(ModelObjects):
+    def __init__(self, dict_pd):
+        super().__init__(dict_pd)
+        lst_dict_shortcuts = dict_pd["c:BaseDataSource.SourceModels"]
+        self.lst_id_shortcut = []
+        if "o:Shortcut" in lst_dict_shortcuts:
+            lst_shortcuts = lst_dict_shortcuts["o:Shortcut"]
+            self.lst_id_shortcut = [sub["@Ref"] for sub in lst_shortcuts]
 
 
 class SourceModel(ModelObjects):
@@ -81,26 +159,8 @@ class Domain(ModelObjects):
         else:
             self.precision = None
 
-
-class Attribute(ModelObjects):
-    """Entity attributes"""
-
-    def __init__(self, dict_pd: dict):
-        super().__init__(dict_pd)
-        self.id_table = dict_pd["id_table"]
-        self.name_table = dict_pd["name_table"]
-        if "a:Stereotype" in dict_pd:
-            self.stereotype = dict_pd["a:Stereotype"]
-        else:
-            self.stereotype = None
-        self.datatype = dict_pd["a:DataType"]
-        if "a:LogicalAttribute.Mandatory" in dict_pd:
-            if dict_pd["a:LogicalAttribute.Mandatory"] == 1:
-                self.mandatory = True
-            else:
-                self.mandatory = False
-        else:
-            self.mandatory = False
+    def as_dict(self) -> dict:
+        return self.__dict__
 
 
 class Entity(ModelObjects):
@@ -129,14 +189,33 @@ class Entity(ModelObjects):
             logger.error("Table '" + self.name + "' has no attributes")
         return dict_attributes
 
+    def as_dict(self) -> dict:
+        dict_result = {"id": self.id, "name": self.name, "code": self.code}
+        dict_result["attributes"] = [
+            item.__dict__ for item in list(self.dict_attributes.values())
+        ]
+        return dict_result
 
-class ShortcutAttributes(ModelObjects):
-    """Attributes of shortcuts"""
 
-    def __init__(self, dict_pd):
+class Attribute(ModelObjects):
+    """Entity attributes"""
+
+    def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
-        self.id_shortcut = dict_pd["id_shortcut"]
-        self.name_shortcut = dict_pd["name_shortcut"]
+        self.id_table = dict_pd["id_table"]
+        self.name_table = dict_pd["name_table"]
+        if "a:Stereotype" in dict_pd:
+            self.stereotype = dict_pd["a:Stereotype"]
+        else:
+            self.stereotype = None
+        self.datatype = dict_pd["a:DataType"]
+        if "a:LogicalAttribute.Mandatory" in dict_pd:
+            if dict_pd["a:LogicalAttribute.Mandatory"] == 1:
+                self.mandatory = True
+            else:
+                self.mandatory = False
+        else:
+            self.mandatory = False
 
 
 class Shortcut(ModelObjects):
@@ -169,25 +248,21 @@ class Shortcut(ModelObjects):
             logger.error("Shortcut '" + self.name + "' has no attributes")
         return dict_attributes
 
-class MappingFeature:
-    """Extraction process specification: how is the attribute populated?"""
+    def as_dict(self) -> list:
+        dict_result = {"id": self.id, "name": self.name, "code": self.code}
+        dict_result["attributes"] = [
+            item.__dict__ for item in list(self.dict_attributes.values())
+        ]
+        return dict_result
 
-    def __init__(self, dict_pd: dict, dict_attributes: dict):
-        self.id = dict_pd["@Id"]
-        self.extended_collection = dict_pd["c:ExtendedCollections"]
 
-        source_features_pd = dict_pd["c:SourceFeatures"]
-        self.entity_source = {}
-        self.shortcut_source = {}
-        if isinstance(source_features_pd, dict):
-            if "o:Shortcut" in source_features_pd:
-                id_shortcut = source_features_pd["o:Shortcut"]["@Ref"]
-                self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]
-            if "o:Entity" in source_features_pd:
-                id_shortcut = source_features_pd["o:Entity"]["@Ref"]
-                self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]
-        elif isinstance(source_features_pd, list):
-            logger.error("MappingFeature list of sources")
+class ShortcutAttributes(ModelObjects):
+    """Attributes of shortcuts"""
+
+    def __init__(self, dict_pd):
+        super().__init__(dict_pd)
+        self.id_shortcut = dict_pd["id_shortcut"]
+        self.name_shortcut = dict_pd["name_shortcut"]
 
 
 class Mapping(ModelObjects):
@@ -265,16 +340,37 @@ class Mapping(ModelObjects):
                 pd_sources = pd_classifiers[source_type]
                 if len(pd_sources) > 0:
                     if isinstance(pd_sources, list):
-                        lst_source_ids = lst_source_ids + [sub["@Ref"] for sub in pd_sources]
+                        lst_source_ids = lst_source_ids + [
+                            sub["@Ref"] for sub in pd_sources
+                        ]
                     elif isinstance(pd_sources, dict):
                         lst_source_ids = lst_source_ids + [pd_sources["@Ref"]]
         return lst_source_ids
 
 
-def load_model(file_model: str):
-    model = Model(file_pd_ldm=file_model)
+class MappingFeature:
+    """Extraction process specification: how is the attribute populated?"""
+
+    def __init__(self, dict_pd: dict, dict_attributes: dict):
+        self.id = dict_pd["@Id"]
+        self.extended_collection = dict_pd["c:ExtendedCollections"]
+
+        source_features_pd = dict_pd["c:SourceFeatures"]
+        self.entity_source = {}
+        self.shortcut_source = {}
+        if isinstance(source_features_pd, dict):
+            if "o:Shortcut" in source_features_pd:
+                id_shortcut = source_features_pd["o:Shortcut"]["@Ref"]
+                self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]
+            if "o:Entity" in source_features_pd:
+                id_shortcut = source_features_pd["o:Entity"]["@Ref"]
+                self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]
+        elif isinstance(source_features_pd, list):
+            logger.error("MappingFeature list of sources")
 
 
 if __name__ == "__main__":
-    load_model(file_model="output/example_dwh.json")
+    file_model = "output/example_dwh.json"
+    model = Model(file_pd_ldm=file_model)
+    dict_test = model.save_objects_json(type_object="entity")
     print("Done")
