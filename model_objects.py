@@ -184,12 +184,25 @@ class Entity(ModelObject):
     """Entities"""
 
     def __init__(self, dict_pd: dict):
+        """Generates an Entity object
+
+        Args:
+            dict_pd (dict): Relevant part of the Power Designer document
+        """
         super().__init__(dict_pd)
         # Setting attributes
         pd_attributes = dict_pd["c:Attributes"]["o:EntityAttribute"]
         self.dict_attributes = self.extract_attributes(pd_attributes)
 
-    def extract_attributes(self, pd_objects: dict):
+    def extract_attributes(self, pd_objects: dict) -> dict:
+        """Extract Power Designer entity attributes and turn them into objects
+
+        Args:
+            pd_objects (dict): Relevant part of Power Designer file
+
+        Returns:
+            dict: Contains the Entity Attribute objects
+        """
         dict_attributes = {}
         if isinstance(pd_objects, list):
             for pd_attribute in pd_objects:
