@@ -20,8 +20,8 @@ LOGGING = {
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "json",
             "filename": "log.json",
-            "maxBytes": 1024,
-            "backupCount": 3
+            "maxBytes": 16384,
+            "backupCount": 10
         }
 
     },
