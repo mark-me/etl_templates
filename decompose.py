@@ -110,21 +110,24 @@ class Entity(ModelObjects):
         super().__init__(dict_pd)
         # Setting attributes
         pd_attributes = dict_pd["c:Attributes"]["o:EntityAttribute"]
-        self.dict_attributes = {}
-        if isinstance(pd_attributes, list):
-            for pd_attribute in pd_attributes:
+        self.dict_attributes = self.extract_attributes(pd_attributes)
+
+    def extract_attributes(self, pd_objects: dict):
+        dict_attributes = {}
+        if isinstance(pd_objects, list):
+            for pd_attribute in pd_objects:
                 pd_attribute["id_table"] = self.id
                 pd_attribute["name_table"] = self.name
                 attribute = Attribute(pd_attribute)
-
-                self.dict_attributes[attribute.id] = attribute
-        elif isinstance(pd_attributes, dict):
-            pd_attributes["id_table"] = self.id
-            pd_attributes["name_table"] = self.name
-            attribute = Attribute(pd_attributes)
-            self.dict_attributes[attribute.id] = attribute
+                dict_attributes[attribute.id] = attribute
+        elif isinstance(pd_objects, dict):
+            pd_objects["id_table"] = self.id
+            pd_objects["name_table"] = self.name
+            attribute = Attribute(pd_objects)
+            dict_attributes[attribute.id] = attribute
         else:
             logger.error("Table '" + self.name + "' has no attributes")
+        return dict_attributes
 
 
 class ShortcutAttributes(ModelObjects):
@@ -145,20 +148,26 @@ class Shortcut(ModelObjects):
         # Setting attributes
         if "c:SubShortcuts" in dict_pd:
             pd_attributes = dict_pd["c:SubShortcuts"]["o:Shortcut"]
-            if isinstance(pd_attributes, list):
-                for pd_attribute in pd_attributes:
-                    pd_attribute["id_shortcut"] = self.id
-                    pd_attribute["name_shortcut"] = self.name
-                    attribute = ShortcutAttributes(pd_attribute)
-                    self.dict_attributes[attribute.id] = attribute
-            elif isinstance(pd_attributes, dict):
-                pd_attribute["id_shortcut"] = self.id
-                pd_attribute["name_shortcut"] = self.name
-                attribute = ShortcutAttributes(pd_attribute)
-                self.dict_attributes[attribute.id] = attribute
+            self.dict_attributes = self.extract_attributes(pd_objects=pd_attributes)
         else:
             logger.error("Shortcut '" + self.name + "' has no attributes")
 
+    def extract_attributes(self, pd_objects: dict):
+        dict_attributes = {}
+        if isinstance(pd_objects, list):
+            for pd_attribute in pd_objects:
+                pd_attribute["id_shortcut"] = self.id
+                pd_attribute["name_shortcut"] = self.name
+                attribute = ShortcutAttributes(pd_attribute)
+                dict_attributes[attribute.id] = attribute
+        elif isinstance(pd_objects, dict):
+            pd_objects["id_shortcut"] = self.id
+            pd_objects["name_shortcut"] = self.name
+            attribute = ShortcutAttributes(pd_objects)
+            dict_attributes[attribute.id] = attribute
+        else:
+            logger.error("Shortcut '" + self.name + "' has no attributes")
+        return dict_attributes
 
 class MappingFeature:
     """Extraction process specification: how is the attribute populated?"""
