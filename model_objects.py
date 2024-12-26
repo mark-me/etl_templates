@@ -32,8 +32,8 @@ class Model:
         self.dict_shortcuts = self.extract(
             type_object="shortcut", pd_objects=pd_objects
         )
-        # Extract mappings
-        # self.lst_pd_mappings = models["c:Mappings"]["o:DefaultObjectMapping"]
+        # TODO: Extract mappings
+        # pd_objects = models["c:Mappings"]["o:DefaultObjectMapping"]
         # self.lst_mappings = []
         # for mapping in self.lst_pd_mappings:
         #     self.lst_mappings.append(
@@ -68,6 +68,8 @@ class Model:
                 object = Entity(pd_object)
             elif type_object == "shortcut":
                 object = Shortcut(pd_object)
+            else:
+                logger.error(f"No extraction method for type '{type_object}'")
             dict_result[object.id] = object
         return dict_result
 
@@ -106,7 +108,7 @@ class Model:
         elif type_object == "shortcut":
             dict_result = [item.as_dict() for item in list(self.dict_shortcuts.values())]
         else:
-            logger.error("Cannot create objects of unknown type " + type_object)
+            logger.error(f"Cannot create objects of unknown type '{type_object}'")
         return dict_result
 
 
@@ -120,7 +122,7 @@ class ModelObjects:
     def __init__(self, dict_pd: dict):
         self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
-        logger.info(type(self).__name__ + ": " + self.name)
+        logger.info(f"Created object {type(self).__name__}: {self.name}")
         self.code = dict_pd["a:Code"]
 
 
@@ -186,7 +188,7 @@ class Entity(ModelObjects):
             attribute = Attribute(pd_objects)
             dict_attributes[attribute.id] = attribute
         else:
-            logger.error("Table '" + self.name + "' has no attributes")
+            logger.error(f"Table '{self.name}' has no attributes")
         return dict_attributes
 
     def as_dict(self) -> dict:
@@ -229,7 +231,7 @@ class Shortcut(ModelObjects):
             pd_attributes = dict_pd["c:SubShortcuts"]["o:Shortcut"]
             self.dict_attributes = self.extract_attributes(pd_objects=pd_attributes)
         else:
-            logger.error("Shortcut '" + self.name + "' has no attributes")
+            logger.error(f"Shortcut '{self.name}' has no attributes")
 
     def extract_attributes(self, pd_objects: dict):
         dict_attributes = {}
@@ -245,7 +247,7 @@ class Shortcut(ModelObjects):
             attribute = ShortcutAttributes(pd_objects)
             dict_attributes[attribute.id] = attribute
         else:
-            logger.error("Shortcut '" + self.name + "' has no attributes")
+            logger.error(f"Shortcut '{self.name}' has no attributes")
         return dict_attributes
 
     def as_dict(self) -> list:
@@ -287,7 +289,7 @@ class Mapping(ModelObjects):
             elif id_source in dict_shortcuts:
                 self.entity_sources[id_source] = dict_shortcuts[id_source]
             else:
-                logger.error("Source entity or shortcut not found for " + id_source)
+                logger.error(f"Source entity or shortcut not found for '{id_source}'")
 
         # Features
         # Unpack attributes so they can be matched to mapping features
@@ -366,7 +368,7 @@ class MappingFeature:
                 id_shortcut = source_features_pd["o:Entity"]["@Ref"]
                 self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]
         elif isinstance(source_features_pd, list):
-            logger.error("MappingFeature list of sources")
+            logger.error("MappingFeature list of sources not implemented")
 
 
 if __name__ == "__main__":
