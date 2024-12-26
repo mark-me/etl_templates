@@ -13,7 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 class Model:
+    """Represents a Power Designer logical data model document"""
+
     def __init__(self, file_pd_ldm: str):
+        """Extracts data from a JSON-ed version of a Power Designer document and turns it into an object representation
+
+        Args:
+            file_pd_ldm (str): JSON version of a Power Designer document (.ldm)
+        """
         self.file_pd_ldm = file_pd_ldm
         with open(file_pd_ldm) as json_file:
             models = json.load(json_file)
