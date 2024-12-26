@@ -123,9 +123,13 @@ class MappingCompositionClause(ModelObject):
             self.stereotype = None
         # Creating an alias
         self.alias = self.name + "_" + self.id
-        self.join_type = self.extract_join_type(dict_pd["a:ExtendedAttributesText"])
+        if "a:ExtendedAttributesText" in dict_pd:
+            self.join_type = self.extract_join_type(dict_pd["a:ExtendedAttributesText"])
+        else:
+            self.join_type = None
+            logger.error(f"No clause found for '{self.name}'")
         logger.debug(f"Composition clause '{self.join_type}' for '{self.name}'")
-        if self.join_type != "FROM":
+        if self.join_type != "FROM" and self.join_type is not None:
             lst_on_clauses = self.extract_on_clause(dict_pd)
 
         print("me")
