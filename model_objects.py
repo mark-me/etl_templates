@@ -122,7 +122,7 @@ class ModelObjects:
     def __init__(self, dict_pd: dict):
         self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
-        logger.info(f"Created object {type(self).__name__}: {self.name}")
+        logger.debug(f"Created object {type(self).__name__}: {self.name}")
         self.code = dict_pd["a:Code"]
 
 
