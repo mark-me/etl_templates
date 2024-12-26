@@ -204,19 +204,18 @@ class Entity(ModelObject):
             dict: Contains the Entity Attribute objects
         """
         dict_attributes = {}
-        if isinstance(pd_objects, list):
+        if len(pd_objects) > 0:
+            if isinstance(pd_objects, dict):
+                pd_objects = [pd_objects]
             for pd_attribute in pd_objects:
                 pd_attribute["id_parent"] = self.id
                 pd_attribute["name_parent"] = self.name
                 attribute = EntityAttribute(pd_attribute)
                 dict_attributes[attribute.id] = attribute
-        elif isinstance(pd_objects, dict):
-            pd_objects["id_parent"] = self.id
-            pd_objects["name_parent"] = self.name
-            attribute = EntityAttribute(pd_objects)
-            dict_attributes[attribute.id] = attribute
         else:
             logger.error(f"Table '{self.name}' has no attributes")
+
+
         return dict_attributes
 
     def as_dict(self) -> dict:
@@ -423,12 +422,10 @@ class Mapping(ModelObject):
         # TODO: Union fills
         dict_compositions = {}
         if isinstance(pd_objects, dict):
-            composition = MappingComposition(dict_pd=pd_objects, dict_sources=self.dict_sources)
+            pd_objects = [pd_objects]
+        for object in pd_objects:
+            composition = MappingComposition(dict_pd=object, dict_sources=self.dict_sources)
             dict_compositions[composition.id] = composition
-        elif isinstance(pd_objects, list):
-            for object in pd_objects:
-                composition = MappingComposition(dict_pd=object, dict_sources=self.dict_sources)
-                dict_compositions[composition.id] = composition
         return dict_compositions
 
 
@@ -436,10 +433,15 @@ class MappingComposition(ModelObject):
     """Specification of the horizontal lineage"""
     def __init__(self, dict_pd, dict_sources: dict):
         super().__init__(dict_pd)
+        self.dict_sources = dict_sources
         pd_joins = dict_pd["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+        self.dict_clauses = {}
+        if isinstance(pd_joins, dict):
+            pd_joins = [pd_joins]
 
         for join in pd_joins:
-            print(join)
+            clause = MappingCompositionClause(dict_pd=join, dict_sources=dict_sources)
+            self.dict_clauses[clause.id] = clause
 
         dict_from = {
 
@@ -457,9 +459,47 @@ class MappingComposition(ModelObject):
             },
         }
 
-class MappingCompositionClauses(ModelObject):
-    def __init__(self, dict_pd):
+class MappingCompositionClause(ModelObject):
+    """Represents how Entities or Shortcuts should be used when combining them (FROM, types of JOINS)"""
+    def __init__(self, dict_pd: dict, dict_sources: dict):
         super().__init__(dict_pd)
+        self.dict_sources = dict_sources
+        if "a:Stereotype" in dict_pd:
+            self.stereotype = dict_pd["a:Stereotype"]
+        else:
+            self.stereotype = None
+        # Creating an alias
+        self.alias = self.name + "_" + self.id
+        self.join_type = self.extract_join_type(dict_pd['a:ExtendedAttributesText'])
+        if self.join_type == "FROM":
+            logger.debug(f"Composition clause '{self.join_type}' for '{self.name}'")
+        else:
+            lst_on_clauses = self.extract_on_clause(dict_pd)
+
+        print("me")
+
+    def extract_join_type(self, extended_attrs_test: str) -> str:
+        """Extracting the FROM or JOIN type clause from a very specific Power Designer attributes
+
+        Args:
+            extended_attrs_test (str): ExtendedAttributesText
+
+        Returns:
+            str: From or Join type
+        """
+        str_proceeder = "mdde_JoinType,"
+        idx_start = extended_attrs_test.find(str_proceeder) + len(str_proceeder)
+        idx_end = extended_attrs_test.find("\n", idx_start)
+        idx_end = idx_end if idx_end > -1 else len(extended_attrs_test) + 1
+        join_type = extended_attrs_test[idx_start:idx_end]
+        idx_start = join_type.find("=") + 1
+        join_type = join_type[idx_start:].upper()
+        return join_type
+
+    def extract_on_clause(self, dict_pd: dict) -> list:
+        id_source = dict_pd['c:ExtendedCollections']['o:ExtendedCollection']['c:Content']['o:Entity']['@Ref']
+        source = self.dict_sources[id_source]
+        return [source]
 
 class MappingFeature:
     """Extraction process specification: how is the attribute populated?"""
