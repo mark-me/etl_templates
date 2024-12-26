@@ -156,7 +156,7 @@ class MappingCompositionClause(ModelObject):
         id_source = dict_pd["c:ExtendedCollections"]["o:ExtendedCollection"][
             "c:Content"
         ]["o:Entity"]["@Ref"]
-        # TODO: Handling shortcuts
+        # FIXME: Handling shortcuts
         source = self.dict_sources[id_source]
         return [source]
 
