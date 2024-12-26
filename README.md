@@ -27,6 +27,11 @@ The current code is based on my own sample data structure, but we want to move t
 
 [xmltodict](https://pypi.org/project/xmltodict/) is used to convert XML into Python [dictionaries](https://realpython.com/python-dicts/), which in turn can be written to a JSON file.
 
+
+## Power Designer
+
+[Presentation](https://docs.google.com/presentation/d/e/2PACX-1vSz0YO-Zb-OxNcQNjBMmwl-HqMe3lqDiZ2mH8qlQZGwpCddTSVQRgFPpJm3Dkvh5JsThuhzpjZtZWUj/pub?start=false&loop=false&delayms=3000) on  Power Designer's nomenclature
+
 ## Future developments
 
 * [Merge loading for mappings](https://techcommunity.microsoft.com/blog/azuresynapseanalyticsblog/merge-t-sql-for-dedicated-sql-pools-is-now-ga/3634331)

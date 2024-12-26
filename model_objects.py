@@ -124,7 +124,7 @@ class Model:
         return dict_result
 
 
-class ModelObjects:
+class ModelObject:
     """Abstract class to fill all common denominators from PowerDesigner
     * id = Identifier
     * name = Name
@@ -135,13 +135,16 @@ class ModelObjects:
         self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
         logger.debug(f"Created object {type(self).__name__}: {self.name}")
-        self.code = dict_pd["a:Code"]
+        if "a:Code" in dict_pd:
+            self.code = dict_pd["a:Code"]
+        else:
+            self.code = None
 
     def as_dict(self) -> dict:
         return self.__dict__
 
 
-class DataSourceModels(ModelObjects):
+class DataSourceModels(ModelObject):
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
         lst_dict_shortcuts = dict_pd["c:BaseDataSource.SourceModels"]
@@ -151,7 +154,7 @@ class DataSourceModels(ModelObjects):
             self.lst_id_shortcut = [sub["@Ref"] for sub in lst_shortcuts]
 
 
-class SourceModel(ModelObjects):
+class SourceModel(ModelObject):
     """No clue"""
 
     def __init__(self, dict_pd):
@@ -161,7 +164,7 @@ class SourceModel(ModelObjects):
         self.id_class_target = dict_pd["a:TargetClassID"]
 
 
-class Domain(ModelObjects):
+class Domain(ModelObject):
     """Datatypes to be applied to attributes"""
 
     def __init__(self, dict_pd):
@@ -177,7 +180,7 @@ class Domain(ModelObjects):
             self.precision = None
 
 
-class Entity(ModelObjects):
+class Entity(ModelObject):
     """Entities"""
 
     def __init__(self, dict_pd: dict):
@@ -192,12 +195,12 @@ class Entity(ModelObjects):
             for pd_attribute in pd_objects:
                 pd_attribute["id_parent"] = self.id
                 pd_attribute["name_parent"] = self.name
-                attribute = Attribute(pd_attribute)
+                attribute = EntityAttribute(pd_attribute)
                 dict_attributes[attribute.id] = attribute
         elif isinstance(pd_objects, dict):
             pd_objects["id_parent"] = self.id
             pd_objects["name_parent"] = self.name
-            attribute = Attribute(pd_objects)
+            attribute = EntityAttribute(pd_objects)
             dict_attributes[attribute.id] = attribute
         else:
             logger.error(f"Table '{self.name}' has no attributes")
@@ -216,10 +219,15 @@ class Entity(ModelObjects):
         return dict_result
 
 
-class Attribute(ModelObjects):
+class EntityAttribute(ModelObject):
     """Entity attributes"""
 
     def __init__(self, dict_pd: dict):
+        """Generates an Entity's attribute
+
+        Args:
+            dict_pd (dict): Part of a PowerDesigner document that specifies an Entity Attribute
+        """
         super().__init__(dict_pd)
         self.id_parent = dict_pd["id_parent"]
         self.name_parent = dict_pd["name_parent"]
@@ -238,10 +246,15 @@ class Attribute(ModelObjects):
             self.mandatory = False
 
 
-class Shortcut(ModelObjects):
-    """An entity that is not part of the current model"""
+class Shortcut(ModelObject):
+    """A Shortcut is an entity that is not part of the current model"""
 
     def __init__(self, dict_pd: dict):
+        """Generates a Shortcut object
+
+        Args:
+            dict_pd (dict): Part of a PowerDesigner document that specifies a Shortcut
+        """
         super().__init__(dict_pd)
         self.dict_attributes = {}
         # Setting attributes
@@ -251,24 +264,37 @@ class Shortcut(ModelObjects):
         else:
             logger.error(f"Shortcut '{self.name}' has no attributes")
 
-    def extract_attributes(self, pd_objects: dict):
+    def extract_attributes(self, pd_objects: dict) -> dict:
+        """Creates a dictionary of objects for the Shortcut's attributes
+
+        Args:
+            pd_objects (dict): Part of the Power Designer document that specifies a shortcut's attributes
+
+        Returns:
+            dict: A dictionary containing all the shortcut attributes as objects
+        """
         dict_attributes = {}
         if isinstance(pd_objects, list):
             for pd_attribute in pd_objects:
                 pd_attribute["id_parent"] = self.id
                 pd_attribute["name_parent"] = self.name
-                attribute = ShortcutAttributes(pd_attribute)
+                attribute = ShortcutAttribute(pd_attribute)
                 dict_attributes[attribute.id] = attribute
         elif isinstance(pd_objects, dict):
             pd_objects["id_parent"] = self.id
             pd_objects["name_parent"] = self.name
-            attribute = ShortcutAttributes(pd_objects)
+            attribute = ShortcutAttribute(pd_objects)
             dict_attributes[attribute.id] = attribute
         else:
             logger.error(f"Shortcut '{self.name}' has no attributes")
         return dict_attributes
 
-    def as_dict(self) -> list:
+    def as_dict(self) -> dict:
+        """Uses the class data to generate a dictionary
+
+        Returns:
+            dict: Contains Shortcut data
+        """
         dict_result = {
             "id": self.id,
             "name": self.name,
@@ -281,17 +307,21 @@ class Shortcut(ModelObjects):
         return dict_result
 
 
-class ShortcutAttributes(ModelObjects):
-    """Attributes of shortcuts"""
-
+class ShortcutAttribute(ModelObject):
+    """Attribute of a shortcut"""
     def __init__(self, dict_pd):
+        """Creates a shortcut attribute object based on Power Designer data
+
+        Args:
+            dict_pd (_type_): Part of the Power Designer document that specifies a Shortcut attribute
+        """
         super().__init__(dict_pd)
         self.id_parent = dict_pd["id_parent"]
         self.name_parent = dict_pd["name_parent"]
         self.type_object = "shortcut_attribute"
 
 
-class Mapping(ModelObjects):
+class Mapping(ModelObject):
     """Extraction process specification: how is the entity populated?"""
 
     def __init__(self, dict_pd: dict, dict_entities: dict, dict_shortcuts: dict):
@@ -305,40 +335,23 @@ class Mapping(ModelObjects):
         self.entity_target = dict_entities[id_entity]
         # Extract entity and shortcut sources
         pd_objects = dict_pd["c:SourceClassifiers"]
-        self.sources = self.extract_sources(
+        self.dict_sources = self.extract_sources(
             pd_objects=pd_objects,
             dict_entities=dict_entities,
             dict_shortcuts=dict_shortcuts,
         )
 
-        # TODO: Union fills
-
         # Joins
-        pd_test = pd_joins = dict_pd["c:ExtendedCompositions"]
-        pd_joins = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"][
-            "c:ExtendedComposition.Content"
-        ]["o:ExtendedSubObject"]
-        for join in pd_joins:
-            print(join)
-
-        dict_joins = {
-            "id": "oSmth",
-            "id_object": "oSmth",
-            "type_join": "some_join",
-            "join_attributes": {
-                "attribute": "someAttribute",
-                "parent": "entity",
-                "attribute_parent": "attribute",
-            },
-        }
+        pd_objects = dict_pd["c:ExtendedCompositions"]['o:ExtendedComposition']
+        self.dict_compositions = self.extract_compositions(pd_objects=pd_objects)
         # with open("output/test.json", "w") as fp:
         #     json.dump(pd_joins, fp, indent=4)
 
         # Features
         # Unpack attributes so they can be matched to mapping features
         dict_attributes = {}
-        for key in self.sources:
-            source_attrs = self.sources[key].as_dict()["attributes"]
+        for key in self.dict_sources:
+            source_attrs = self.dict_sources[key].as_dict()["attributes"]
             dict_attributes.update({attr["id"]: attr for attr in source_attrs})
 
         # pd_feature_maps = dict_pd['c:StructuralFeatureMaps']['o:DefaultStructuralFeatureMapping']
@@ -351,7 +364,16 @@ class Mapping(ModelObjects):
     def extract_sources(
         self, pd_objects: dict, dict_entities: dict, dict_shortcuts: dict
     ) -> dict:
-        """Extract sources and fill with corresponding object data"""
+        """Extract sources and fill with corresponding object data
+
+        Args:
+            pd_objects (dict): Part of the Power Designer document concerning mapping
+            dict_entities (dict): Dictionary containing previously extracted Entity objects
+            dict_shortcuts (dict): Dictionary containing previously extracted Shortcut objects
+
+        Returns:
+            dict: _description_
+        """
         dict_sources = {}
         lst_source_types = ["o:Entity", "o:Shortcut"]
         # Keep only the source types that exist
@@ -376,11 +398,55 @@ class Mapping(ModelObjects):
                     dict_sources[source_id] = dict_shortcuts[source_id]
         return dict_sources
 
+    def extract_compositions(self, pd_objects: dict) -> dict:
+        """Determine how sources are used to fill the target entity
 
-class MappingJoin:
-    def __init__(self):
-        pass
+        Args:
+            pd_objects (dict): _description_
 
+        Returns:
+            dict: _description_
+        """
+        # TODO: Union fills
+        dict_compositions = {}
+        if isinstance(pd_objects, dict):
+            composition = MappingComposition(dict_pd=pd_objects, dict_sources=self.dict_sources)
+            dict_compositions[composition.id] = composition
+        elif isinstance(pd_objects, list):
+            for object in pd_objects:
+                composition = MappingComposition(dict_pd=object, dict_sources=self.dict_sources)
+                dict_compositions[composition.id] = composition
+        return dict_compositions
+
+
+class MappingComposition(ModelObject):
+    """Specification of the horizontal lineage"""
+    def __init__(self, dict_pd, dict_sources: dict):
+        super().__init__(dict_pd)
+        pd_joins = dict_pd["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+
+        for join in pd_joins:
+            print(join)
+
+        dict_from = {
+
+        }
+
+        dict_joins = {
+            "id": "oSmth",
+            "id_object": "oSmth",
+            "alias": "a1",
+            "type_join": "some_join",
+            "join_attributes": {
+                "attribute": "someAttribute",
+                "parent_alias": "entity",
+                "attribute_parent": "attribute",
+            },
+        }
+
+class MappingCompositionClauses(ModelObject):
+    def __init__(self, dict_pd):
+        super().__init__(dict_pd)
 
 class MappingFeature:
     """Extraction process specification: how is the attribute populated?"""
