@@ -14,6 +14,8 @@ class Model:
         self.file_pd_ldm = file_pd_ldm
         with open(file_pd_ldm) as json_file:
             models = json.load(json_file)
+
+        # TODO: Schema handling
         # Extract Data sources # TODO: Research role models["c:DataSources"]["o:DefaultDataSource"]
         pd_objects = [models["c:DataSources"]["o:DefaultDataSource"]]
         self.dict_datasource_models = self.extract(
@@ -186,13 +188,13 @@ class Entity(ModelObjects):
         dict_attributes = {}
         if isinstance(pd_objects, list):
             for pd_attribute in pd_objects:
-                pd_attribute["id_table"] = self.id
-                pd_attribute["name_table"] = self.name
+                pd_attribute["id_parent"] = self.id
+                pd_attribute["name_parent"] = self.name
                 attribute = Attribute(pd_attribute)
                 dict_attributes[attribute.id] = attribute
         elif isinstance(pd_objects, dict):
-            pd_objects["id_table"] = self.id
-            pd_objects["name_table"] = self.name
+            pd_objects["id_parent"] = self.id
+            pd_objects["name_parent"] = self.name
             attribute = Attribute(pd_objects)
             dict_attributes[attribute.id] = attribute
         else:
@@ -200,7 +202,12 @@ class Entity(ModelObjects):
         return dict_attributes
 
     def as_dict(self) -> dict:
-        dict_result = {"id": self.id, "name": self.name, "code": self.code}
+        dict_result = {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "type_object": "entity",
+        }
         dict_result["attributes"] = [
             item.__dict__ for item in list(self.dict_attributes.values())
         ]
@@ -212,8 +219,9 @@ class Attribute(ModelObjects):
 
     def __init__(self, dict_pd: dict):
         super().__init__(dict_pd)
-        self.id_table = dict_pd["id_table"]
-        self.name_table = dict_pd["name_table"]
+        self.id_parent = dict_pd["id_parent"]
+        self.name_parent = dict_pd["name_parent"]
+        self.type_object = "entity_attribute"
         if "a:Stereotype" in dict_pd:
             self.stereotype = dict_pd["a:Stereotype"]
         else:
@@ -245,13 +253,13 @@ class Shortcut(ModelObjects):
         dict_attributes = {}
         if isinstance(pd_objects, list):
             for pd_attribute in pd_objects:
-                pd_attribute["id_shortcut"] = self.id
-                pd_attribute["name_shortcut"] = self.name
+                pd_attribute["id_parent"] = self.id
+                pd_attribute["name_parent"] = self.name
                 attribute = ShortcutAttributes(pd_attribute)
                 dict_attributes[attribute.id] = attribute
         elif isinstance(pd_objects, dict):
-            pd_objects["id_shortcut"] = self.id
-            pd_objects["name_shortcut"] = self.name
+            pd_objects["id_parent"] = self.id
+            pd_objects["name_parent"] = self.name
             attribute = ShortcutAttributes(pd_objects)
             dict_attributes[attribute.id] = attribute
         else:
@@ -259,7 +267,12 @@ class Shortcut(ModelObjects):
         return dict_attributes
 
     def as_dict(self) -> list:
-        dict_result = {"id": self.id, "name": self.name, "code": self.code}
+        dict_result = {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "type_object": "shortcut",
+        }
         dict_result["attributes"] = [
             item.__dict__ for item in list(self.dict_attributes.values())
         ]
@@ -271,8 +284,9 @@ class ShortcutAttributes(ModelObjects):
 
     def __init__(self, dict_pd):
         super().__init__(dict_pd)
-        self.id_shortcut = dict_pd["id_shortcut"]
-        self.name_shortcut = dict_pd["name_shortcut"]
+        self.id_parent = dict_pd["id_parent"]
+        self.name_parent = dict_pd["name_parent"]
+        self.type_object = "shortcut_attribute"
 
 
 class Mapping(ModelObjects):
@@ -285,10 +299,10 @@ class Mapping(ModelObjects):
             self.stereotype = dict_pd["a:Stereotype"]
         else:
             self.stereotype = None
-        # Target entity
+        # Extract target entity
         id_entity = dict_pd["c:Classifier"]["o:Entity"]["@Ref"]
         self.entity_target = dict_entities[id_entity]
-        # Derive entity and shortcut sources
+        # Extract entity and shortcut sources
         pd_objects = dict_pd["c:SourceClassifiers"]
         self.sources = self.extract_sources(
             pd_objects=pd_objects,
@@ -298,8 +312,15 @@ class Mapping(ModelObjects):
 
         # Features
         # Unpack attributes so they can be matched to mapping features
+        lst_attributes = []
+        for key in self.sources:
+            test = self.sources[key].as_dict()
+            lst_attributes = lst_attributes + test["attributes"]
+
         lst_attrs = [
-            value.dict_attributes for key, value in self.sources.items()
+            source["attributes"]
+            for id_source in self.sources
+            if "attributes" in self.sources[id_source].as_dict
         ]
         dict_attrs = {k: v for e in lst_attrs for (k, v) in e.items()}
 
