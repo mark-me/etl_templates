@@ -250,10 +250,7 @@ class EntityAttribute(ModelObject):
             self.stereotype = None
         self.datatype = dict_pd["a:DataType"]
         if "a:LogicalAttribute.Mandatory" in dict_pd:
-            if dict_pd["a:LogicalAttribute.Mandatory"] == 1:
-                self.mandatory = True
-            else:
-                self.mandatory = False
+            self.mandatory = dict_pd["a:LogicalAttribute.Mandatory"] == 1
         else:
             self.mandatory = False
 
@@ -286,17 +283,14 @@ class Shortcut(ModelObject):
             dict: A dictionary containing all the shortcut attributes as objects
         """
         dict_attributes = {}
-        if isinstance(pd_objects, list):
+        if len(pd_objects) > 0:
+            if isinstance(pd_objects, dict):
+                pd_objects = [pd_objects]
             for pd_attribute in pd_objects:
                 pd_attribute["id_parent"] = self.id
                 pd_attribute["name_parent"] = self.name
                 attribute = ShortcutAttribute(pd_attribute)
                 dict_attributes[attribute.id] = attribute
-        elif isinstance(pd_objects, dict):
-            pd_objects["id_parent"] = self.id
-            pd_objects["name_parent"] = self.name
-            attribute = ShortcutAttribute(pd_objects)
-            dict_attributes[attribute.id] = attribute
         else:
             logger.error(f"Shortcut '{self.name}' has no attributes")
         return dict_attributes
@@ -393,17 +387,10 @@ class Mapping(ModelObject):
         for source_type in lst_source_types:
             pd_sources = pd_objects[source_type]
             # TODO: Check if can be deleted if len(pd_sources) > 0:
-            # If there are multiple sources of a type
-            if isinstance(pd_sources, list):
-                for source in pd_sources:
-                    source_id = source["@Ref"]
-                    if source_type == "o:Entity":
-                        dict_sources[source_id] = dict_entities[source_id]
-                    elif source_type == "o:Shortcut":
-                        dict_sources[source_id] = dict_shortcuts[source_id]
-            # If there is a single sources of a type
-            elif isinstance(pd_sources, dict):
-                source_id = pd_sources["@Ref"]
+            if isinstance(pd_sources, dict):
+                pd_sources = [pd_sources]
+            for source in pd_sources:
+                source_id = source["@Ref"]
                 if source_type == "o:Entity":
                     dict_sources[source_id] = dict_entities[source_id]
                 elif source_type == "o:Shortcut":
