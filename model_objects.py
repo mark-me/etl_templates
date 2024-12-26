@@ -33,8 +33,8 @@ class Model:
             type_object="shortcut", pd_objects=pd_objects
         )
         # TODO: Extract mappings
-        # pd_objects = models["c:Mappings"]["o:DefaultObjectMapping"]
-        # self.lst_mappings = []
+        pd_objects = models["c:Mappings"]["o:DefaultObjectMapping"]
+        self.dict_mappings = self.extract(type_object="mapping", pd_objects=pd_objects)
         # for mapping in self.lst_pd_mappings:
         #     self.lst_mappings.append(
         #         Mapping(mapping, self.dict_entities, self.dict_shortcuts)
@@ -68,6 +68,12 @@ class Model:
                 object = Entity(pd_object)
             elif type_object == "shortcut":
                 object = Shortcut(pd_object)
+            elif type_object == "mapping":
+                object = Mapping(
+                    pd_object,
+                    dict_entities=self.dict_entities,
+                    dict_shortcuts=self.dict_shortcuts,
+                )
             else:
                 logger.error(f"No extraction method for type '{type_object}'")
             dict_result[object.id] = object
@@ -106,7 +112,9 @@ class Model:
         elif type_object == "entity":
             dict_result = [item.as_dict() for item in list(self.dict_entities.values())]
         elif type_object == "shortcut":
-            dict_result = [item.as_dict() for item in list(self.dict_shortcuts.values())]
+            dict_result = [
+                item.as_dict() for item in list(self.dict_shortcuts.values())
+            ]
         else:
             logger.error(f"Cannot create objects of unknown type '{type_object}'")
         return dict_result
@@ -281,73 +289,56 @@ class Mapping(ModelObjects):
         id_entity = dict_pd["c:Classifier"]["o:Entity"]["@Ref"]
         self.entity_target = dict_entities[id_entity]
         # Derive entity and shortcut sources
-        lst_source_ids = self.extract_source_ids(dict_pd=dict_pd)
-        self.entity_sources = {}
-        for id_source in lst_source_ids:
-            if id_source in dict_entities:
-                self.entity_sources[id_source] = dict_entities[id_source]
-            elif id_source in dict_shortcuts:
-                self.entity_sources[id_source] = dict_shortcuts[id_source]
-            else:
-                logger.error(f"Source entity or shortcut not found for '{id_source}'")
+        pd_objects = dict_pd["c:SourceClassifiers"]
+        self.sources = self.extract_sources(
+            pd_objects=pd_objects,
+            dict_entities=dict_entities,
+            dict_shortcuts=dict_shortcuts,
+        )
 
         # Features
         # Unpack attributes so they can be matched to mapping features
         lst_attrs = [
-            value.dict_attributes for key, value in self.entity_sources.items()
+            value.dict_attributes for key, value in self.sources.items()
         ]
         dict_attrs = {k: v for e in lst_attrs for (k, v) in e.items()}
 
-        pd_features = dict_pd["c:StructuralFeatureMaps"][
-            "o:DefaultStructuralFeatureMapping"
-        ]
-        self.lst_features = []
-        for pd_feature in pd_features:
-            self.lst_features.append(
-                MappingFeature(pd_feature, dict_attributes=dict_attrs)
-            )
+        # pd_features = dict_pd["c:StructuralFeatureMaps"][
+        #     "o:DefaultStructuralFeatureMapping"
+        # ]
+        # self.lst_features = []
+        # for pd_feature in pd_features:
+        #     self.lst_features.append(
+        #         MappingFeature(pd_feature, dict_attributes=dict_attrs)
+        #     )
 
-    def find_entity_sources(self, dict_pd: dict, dict_entities: dict) -> dict:
-        entity_sources = {}
-        if "o:Entity" in dict_pd["c:SourceClassifiers"]:
-            pd_entities = dict_pd["c:SourceClassifiers"]["o:Entity"]
-            if len(pd_entities) > 0:
-                if isinstance(pd_entities, list):
-                    lst_id_entity = [sub["@Ref"] for sub in pd_entities]
-                    for id_entity in lst_id_entity:
-                        entity_sources[id_entity] = dict_entities[id_entity]
-                elif isinstance(pd_entities, dict):
-                    entity_sources[id_entity] = dict_entities[id_entity]
-        return entity_sources
-
-    def find_shortcut_sources(self, dict_pd: dict, dict_shortcuts: dict) -> dict:
-        shortcut_sources = {}
-        if "o:Shortcut" in dict_pd["c:SourceClassifiers"]:
-            pd_shortcuts = dict_pd["c:SourceClassifiers"]["o:Shortcut"]
-            if len(pd_shortcuts) > 0:
-                if isinstance(pd_shortcuts, list):
-                    for id_shortcut in pd_shortcuts:
-                        shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
-                elif isinstance(pd_shortcuts, dict):
-                    id_shortcut = pd_shortcuts["@Ref"]
-                    shortcut_sources[id_shortcut] = dict_shortcuts[id_shortcut]
-        return shortcut_sources
-
-    def extract_source_ids(self, dict_pd: dict) -> list:
-        lst_source_ids = []
-        pd_classifiers = dict_pd["c:SourceClassifiers"]
+    def extract_sources(
+        self, pd_objects: dict, dict_entities: dict, dict_shortcuts: dict
+    ) -> dict:
+        """Extract sources and fill with corresponding object data"""
+        dict_sources = {}
         lst_source_types = ["o:Entity", "o:Shortcut"]
+        # Keep only the source types that exist
+        lst_source_types = list(set(lst_source_types).intersection(pd_objects))
         for source_type in lst_source_types:
-            if source_type in pd_classifiers:
-                pd_sources = pd_classifiers[source_type]
-                if len(pd_sources) > 0:
-                    if isinstance(pd_sources, list):
-                        lst_source_ids = lst_source_ids + [
-                            sub["@Ref"] for sub in pd_sources
-                        ]
-                    elif isinstance(pd_sources, dict):
-                        lst_source_ids = lst_source_ids + [pd_sources["@Ref"]]
-        return lst_source_ids
+            pd_sources = pd_objects[source_type]
+            # TODO: Check if can be deleted if len(pd_sources) > 0:
+            # If there are multiple sources of a type
+            if isinstance(pd_sources, list):
+                for source in pd_sources:
+                    source_id = source["@Ref"]
+                    if source_type == "o:Entity":
+                        dict_sources[source_id] = dict_entities[source_id]
+                    elif source_type == "o:Shortcut":
+                        dict_sources[source_id] = dict_shortcuts[source_id]
+            # If there is a single sources of a type
+            elif isinstance(pd_sources, dict):
+                source_id = pd_sources["@Ref"]
+                if source_type == "o:Entity":
+                    dict_sources[source_id] = dict_entities[source_id]
+                elif source_type == "o:Shortcut":
+                    dict_sources[source_id] = dict_shortcuts[source_id]
+        return dict_sources
 
 
 class MappingFeature:
