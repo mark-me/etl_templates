@@ -1,5 +1,7 @@
 import logging
 
+import json
+
 import logging_config
 from model_object import ModelObject
 
@@ -19,16 +21,28 @@ class Mapping(ModelObject):
         id_entity = dict_pd["c:Classifier"]["o:Entity"]["@Ref"]
         self.entity_target = dict_entities[id_entity]
         # Extract entity and shortcut sources
-        pd_objects = dict_pd["c:SourceClassifiers"]
+        pd_sources = dict_pd["c:SourceClassifiers"]
         self.dict_sources = self.extract_sources(
-            pd_objects=pd_objects,
+            pd_objects=pd_sources,
             dict_entities=dict_entities,
             dict_shortcuts=dict_shortcuts,
         )
-
         # Joins
-        pd_objects = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"]
-        self.dict_compositions = self.extract_compositions(pd_objects=pd_objects)
+        pd_compositions = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"]
+        # with open("output/test_compositions.json", "w") as fp:
+        #     json.dump(pd_compositions, fp, indent=4)
+        self.dict_compositions = self.extract_compositions(pd_objects=pd_compositions)
+        # Structural Feature Maps
+        pd_features = dict_pd['c:StructuralFeatureMaps']['o:DefaultStructuralFeatureMapping']
+        # with open("output/test_features.json", "w") as fp:
+        #     json.dump(pd_features, fp, indent=4)
+
+
+        pd_datasource = dict_pd['c:DataSource']['o:DefaultDataSource']
+        # with open("output/test_datasources.json", "w") as fp:
+        #     json.dump(pd_datasource, fp, indent=4)
+        print("me")
+
 
     def extract_sources(
         self, pd_objects: dict, dict_entities: dict, dict_shortcuts: dict
@@ -82,7 +96,7 @@ class Mapping(ModelObject):
 
 
 class MappingComposition(ModelObject):
-    """Specification of the horizontal lineage"""
+    """Specification of entities and their relations for the horizontal lineage"""
 
     def __init__(self, dict_pd, dict_sources: dict):
         # TODO: Add Docstring
@@ -150,28 +164,34 @@ class MappingCompositionClause(ModelObject):
         # Unpack attributes so they can be matched to mapping features
         dict_attributes = {}
         for key in self.dict_sources:
-            source_attrs = self.dict_sources[key].as_dict()["attributes"]
+            source_attrs = source.as_dict()["attributes"]
             dict_attributes.update({attr["id"]: attr for attr in source_attrs})
+        # TODO: Add comment here
         lst_dict_on = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"][
             "c:ExtendedComposition.Content"
         ]["o:ExtendedSubObject"]["c:ExtendedCollections"]["o:ExtendedCollection"]
         dict_on_attributes = {}
         i = 1
         for dict_on in lst_dict_on:
+            # TODO: Instead of if: source_types = list(set(lst_source_types).intersection(pd_objects))
             if "o:EntityAttribute" in dict_on["c:Content"]:
                 id_attribute = dict_on["c:Content"]["o:EntityAttribute"]["@Ref"]
-                logger.info(f"Found entity attribute '{id_attribute}'")
             elif "o:ExtendedSubObject" in dict_on["c:Content"]:
                 id_attribute = dict_on["c:Content"]["o:ExtendedSubObject"]["@Ref"]
-                logger.info(f"Found shortcut attribute '{id_attribute}'")
             elif "o:Shortcut" in dict_on["c:Content"]:
                 id_attribute = dict_on["c:Content"]["o:Shortcut"]["@Ref"]
-                logger.info(f"Found shortcut attribute '{id_attribute}'")
+
             # Error if attribute can't be found in shortcuts and entities
             if id_attribute in dict_attributes:
                 dict_on_attributes[id_attribute] = dict_attributes[id_attribute]
+                attribute = dict_on_attributes[id_attribute]
+                logger.info(
+                    f"Found shortcut attribute '{id_attribute}'-'{attribute["name"]}' for {dict_on_attributes[id_attribute]["name_parent"]}"
+                )
             else:
-                logger.error(f"Could not match attribute-id '{id_attribute}' for source '{source.name}' during mapping")
+                logger.error(
+                    f"Could not match attribute-id '{id_attribute}' for source '{source.name}' during mapping"
+                )
             print(i)
             i = i + 1
         return [source]
@@ -189,6 +209,7 @@ class MappingFeature:
         self.entity_source = {}
         self.shortcut_source = {}
         if isinstance(source_features_pd, dict):
+
             if "o:Shortcut" in source_features_pd:
                 id_shortcut = source_features_pd["o:Shortcut"]["@Ref"]
                 self.shortcut_source[id_shortcut] = dict_attributes[id_shortcut]

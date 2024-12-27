@@ -7,6 +7,7 @@ import xmltodict
 import logging_config
 from model_entity import Entity, Shortcut
 from model_mapping import Mapping
+from model_helpers import Domain, DataSourceModel, TargetModel
 from model_object import ModelObject
 
 logger = logging.getLogger(__name__)
@@ -25,11 +26,13 @@ class Model:
         model = self.read_file_model(file_pd_ldm=file_pd_ldm)
 
         # TODO: Schema handling
+        pd_objects = model["c:TargetModels"]["o:TargetModel"]
+
         # Extract Data sources # TODO: Research role models["c:DataSources"]["o:DefaultDataSource"]
-        pd_objects = [model["c:DataSources"]["o:DefaultDataSource"]]
-        self.dict_datasource_models = self.extract(
-            type_object="datasource_model", pd_objects=pd_objects
-        )
+        # pd_objects = [model["c:DataSources"]["o:DefaultDataSource"]]
+        # self.dict_datasource_models = self.extract(
+        #     type_object="datasource_model", pd_objects=pd_objects
+        # )
         # TODO: Research role models["c:SourceModels"]
         # Extract Domain data
         # TODO: Link between attributes and domains
@@ -99,8 +102,10 @@ class Model:
         """Create objects from model file data"""
         dict_result = {}
         for pd_object in pd_objects:
-            if type_object == "datasource_model":
-                object = DataSourceModels(pd_object)
+            if type_object == "target_model":
+                object = TargetModel(pd_object)
+            elif type_object == "datasource_model":
+                object = DataSourceModel(pd_object)
             elif type_object == "domain":
                 object = Domain(pd_object)
             elif type_object == "entity":
@@ -161,43 +166,7 @@ class Model:
         return dict_result
 
 
-class DataSourceModels(ModelObject):
-    # TODO: Add Docstring
-    def __init__(self, dict_pd):
-        super().__init__(dict_pd)
-        lst_dict_shortcuts = dict_pd["c:BaseDataSource.SourceModels"]
-        self.lst_id_shortcut = []
-        if "o:Shortcut" in lst_dict_shortcuts:
-            lst_shortcuts = lst_dict_shortcuts["o:Shortcut"]
-            if isinstance(lst_shortcuts, dict):
-                lst_shortcuts = [lst_shortcuts]
-            self.lst_id_shortcut = [sub["@Ref"] for sub in lst_shortcuts]
 
-
-class SourceModel(ModelObject):
-    """No clue"""
-    # TODO: Research role
-    def __init__(self, dict_pd):
-        super().__init__(dict_pd)
-        self.stereotype_target = dict_pd[" a:TargetStereotype"]
-        self.id_target = dict_pd["a:TargetID"]
-        self.id_class_target = dict_pd["a:TargetClassID"]
-
-
-class Domain(ModelObject):
-    """Datatypes to be applied to attributes"""
-
-    def __init__(self, dict_pd):
-        super().__init__(dict_pd)
-        self.datatype = dict_pd["a:DataType"]
-        if "a:Length" in dict_pd:
-            self.length = dict_pd["a:Length"]
-        else:
-            self.length = None
-        if "a:Precision" in dict_pd:
-            self.precision = dict_pd["a:Precision"]
-        else:
-            self.precision = None
 
 
 if __name__ == "__main__":
