@@ -14,6 +14,7 @@ class ModelObject:
     """
 
     def __init__(self, dict_pd: dict):
+        # TODO: Add Docstring
         self.id = dict_pd["@Id"]
         self.name = dict_pd["a:Name"]
         logger.debug(f"Created object {type(self).__name__}: {self.name}")
@@ -23,4 +24,5 @@ class ModelObject:
             self.code = None
 
     def as_dict(self) -> dict:
+        # TODO: Add Docstring
         return self.__dict__

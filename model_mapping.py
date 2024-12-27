@@ -30,20 +30,6 @@ class Mapping(ModelObject):
         pd_objects = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"]
         self.dict_compositions = self.extract_compositions(pd_objects=pd_objects)
 
-        # Features
-        # Unpack attributes so they can be matched to mapping features
-        dict_attributes = {}
-        for key in self.dict_sources:
-            source_attrs = self.dict_sources[key].as_dict()["attributes"]
-            dict_attributes.update({attr["id"]: attr for attr in source_attrs})
-
-        # pd_feature_maps = dict_pd['c:StructuralFeatureMaps']['o:DefaultStructuralFeatureMapping']
-        # dict_features = {}
-        # for feature in pd_feature_maps:
-        #     dict_features[feature["@Id"]] = feature
-        # pd_data_source = dict_pd['c:DataSource']
-        print("me")
-
     def extract_sources(
         self, pd_objects: dict, dict_entities: dict, dict_shortcuts: dict
     ) -> dict:
@@ -99,13 +85,14 @@ class MappingComposition(ModelObject):
     """Specification of the horizontal lineage"""
 
     def __init__(self, dict_pd, dict_sources: dict):
+        # TODO: Add Docstring
         super().__init__(dict_pd)
         self.dict_sources = dict_sources
+        # Join types (MappingCompositionClause)
         pd_joins = dict_pd["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
-        self.dict_clauses = {}
         if isinstance(pd_joins, dict):
             pd_joins = [pd_joins]
-
+        self.dict_clauses = {}
         for join in pd_joins:
             clause = MappingCompositionClause(dict_pd=join, dict_sources=dict_sources)
             self.dict_clauses[clause.id] = clause
@@ -134,30 +121,47 @@ class MappingCompositionClause(ModelObject):
 
         print("me")
 
-    def extract_join_type(self, extended_attrs_test: str) -> str:
+    def extract_join_type(self, extended_attrs_text: str) -> str:
         """Extracting the FROM or JOIN type clause from a very specific Power Designer attributes
 
         Args:
-            extended_attrs_test (str): ExtendedAttributesText
+            extended_attrs_text (str): ExtendedAttributesText
 
         Returns:
-            str: From or Join type
+            str: FROM or JOIN type
         """
         str_proceeder = "mdde_JoinType,"
-        idx_start = extended_attrs_test.find(str_proceeder) + len(str_proceeder)
-        idx_end = extended_attrs_test.find("\n", idx_start)
-        idx_end = idx_end if idx_end > -1 else len(extended_attrs_test) + 1
-        join_type = extended_attrs_test[idx_start:idx_end]
+        idx_start = extended_attrs_text.find(str_proceeder) + len(str_proceeder)
+        idx_end = extended_attrs_text.find("\n", idx_start)
+        idx_end = idx_end if idx_end > -1 else len(extended_attrs_text) + 1
+        join_type = extended_attrs_text[idx_start:idx_end]
         idx_start = join_type.find("=") + 1
         join_type = join_type[idx_start:].upper()
         return join_type
 
     def extract_on_clause(self, dict_pd: dict) -> list:
+        # TODO: Add Docstring
         id_source = dict_pd["c:ExtendedCollections"]["o:ExtendedCollection"][
             "c:Content"
         ]["o:Entity"]["@Ref"]
         # FIXME: Handling shortcuts
         source = self.dict_sources[id_source]
+        # Attributes
+        # Unpack attributes so they can be matched to mapping features
+        dict_attributes = {}
+        for key in self.dict_sources:
+            source_attrs = self.dict_sources[key].as_dict()["attributes"]
+            dict_attributes.update({attr["id"]: attr for attr in source_attrs})
+        lst_dict_on = dict_pd["c:ExtendedCompositions"]["o:ExtendedComposition"][
+            "c:ExtendedComposition.Content"
+        ]["o:ExtendedSubObject"]["c:ExtendedCollections"]["o:ExtendedCollection"]
+        dict_on_attributes = {}
+        for dict_on in lst_dict_on:
+            if "o:EntityAttribute" in dict_on["c:Content"]:
+                id_attribute = dict_on["c:Content"]["o:EntityAttribute"]["@Ref"]
+            elif "o:ExtendedSubObject" in dict_on["c:Content"]:
+                id_attribute = dict_on["c:Content"]["o:ExtendedSubObject"]["@Ref"]
+            #dict_on_attributes[id_attribute] = dict_attributes[id_attribute]
         return [source]
 
 
@@ -165,6 +169,7 @@ class MappingFeature:
     """Extraction process specification: how is the attribute populated?"""
 
     def __init__(self, dict_pd: dict, dict_attributes: dict):
+        # TODO: Add Docstring
         self.id = dict_pd["@Id"]
         self.extended_collection = dict_pd["c:ExtendedCollections"]
 

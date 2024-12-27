@@ -45,6 +45,11 @@ class Entity(ModelObject):
         return dict_attributes
 
     def as_dict(self) -> dict:
+        """Uses the class data to generate a dictionary
+
+        Returns:
+            dict: Contains Shortcut data
+        """
         dict_result = {
             "id": self.id,
             "name": self.name,
