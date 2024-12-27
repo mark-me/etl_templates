@@ -169,6 +169,8 @@ class DataSourceModels(ModelObject):
         self.lst_id_shortcut = []
         if "o:Shortcut" in lst_dict_shortcuts:
             lst_shortcuts = lst_dict_shortcuts["o:Shortcut"]
+            if isinstance(lst_shortcuts, dict):
+                lst_shortcuts = [lst_shortcuts]
             self.lst_id_shortcut = [sub["@Ref"] for sub in lst_shortcuts]
 
 
@@ -199,7 +201,12 @@ class Domain(ModelObject):
 
 
 if __name__ == "__main__":
-    file_model = "input\ExampleDWH.ldm"
+    file_model = "input\Douane CL LDM.ldm"
     model = Model(file_pd_ldm=file_model)
-    dict_test = model.save_objects_json(type_object="shortcut")
+    # Saving model objects
+    model.save_objects_json(type_object="datasource_models")
+    model.save_objects_json(type_object="shortcut")
+    model.save_objects_json(type_object="entity")
+    model.save_objects_json(type_object="domain")
+
     print("Done")

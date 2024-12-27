@@ -156,12 +156,24 @@ class MappingCompositionClause(ModelObject):
             "c:ExtendedComposition.Content"
         ]["o:ExtendedSubObject"]["c:ExtendedCollections"]["o:ExtendedCollection"]
         dict_on_attributes = {}
+        i = 1
         for dict_on in lst_dict_on:
             if "o:EntityAttribute" in dict_on["c:Content"]:
                 id_attribute = dict_on["c:Content"]["o:EntityAttribute"]["@Ref"]
+                logger.info(f"Found entity attribute '{id_attribute}'")
             elif "o:ExtendedSubObject" in dict_on["c:Content"]:
                 id_attribute = dict_on["c:Content"]["o:ExtendedSubObject"]["@Ref"]
-            #dict_on_attributes[id_attribute] = dict_attributes[id_attribute]
+                logger.info(f"Found shortcut attribute '{id_attribute}'")
+            elif "o:Shortcut" in dict_on["c:Content"]:
+                id_attribute = dict_on["c:Content"]["o:Shortcut"]["@Ref"]
+                logger.info(f"Found shortcut attribute '{id_attribute}'")
+            # Error if attribute can't be found in shortcuts and entities
+            if id_attribute in dict_attributes:
+                dict_on_attributes[id_attribute] = dict_attributes[id_attribute]
+            else:
+                logger.error(f"Could not match attribute-id '{id_attribute}' for source '{source.name}' during mapping")
+            print(i)
+            i = i + 1
         return [source]
 
 
