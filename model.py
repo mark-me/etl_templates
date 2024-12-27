@@ -65,7 +65,34 @@ class Model:
             doc = fd.read()
         dict_data = xmltodict.parse(doc)
         dict_data = dict_data["Model"]["o:RootObject"]["c:Children"]["o:Model"]
+        # dict_data = remove_a_key(dict_data, "a:CreationDate")
+        # dict_data = remove_a_key(dict_data, "a:ModificationDate")
+        # dict_data = remove_a_key(dict_data, "a:Creator")
+        # dict_data = remove_a_key(dict_data, "a:Modifier")
+        # dict_data = remove_a_key(dict_data, "a:History")
         return dict_data
+
+    def remove_a_key(self, d: dict, remove_key: str) -> dict:
+        """Remove keys from a nested dictionary, also from the dictionaries within lists (Currently not used)
+
+        Args:
+            d (dict): Dictionary that needs cleaning
+            remove_key (str): The name of the keys that needs to be removed
+
+        Returns:
+            dict: The dictionary without the keys
+        """
+        if isinstance(d, dict):
+            for key in list(d.keys()):
+                if key == remove_key:
+                    del d[key]
+                else:
+                    self.remove_a_key(d[key], remove_key)
+            return d
+        elif isinstance(d, list):
+            for i in range(len(d)):
+                d[i] = self.remove_a_key(d[i], remove_key)
+            return d
 
     def extract(self, type_object: str, pd_objects: dict):
         # TODO: Add Docstring
