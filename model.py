@@ -201,7 +201,7 @@ class Domain(ModelObject):
 
 
 if __name__ == "__main__":
-    file_model = "input\Douane CL LDM.ldm"
+    file_model = "input/ExampleDWH.ldm"
     model = Model(file_pd_ldm=file_model)
     # Saving model objects
     model.save_objects_json(type_object="datasource_models")
