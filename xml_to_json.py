@@ -21,7 +21,16 @@ def xml_to_dict(file_xml: str) -> dict:
     return dict_data
 
 
-def remove_a_key(d, remove_key):
+def remove_a_key(d: dict, remove_key: str) -> dict:
+    """Remove keys from a nested dictionary, also from the dictionaries within lists
+
+    Args:
+        d (dict): Dictionary that needs cleaning
+        remove_key (str): The name of the keys that needs to be removed
+
+    Returns:
+        dict: The dictionary without the keys
+    """
     if isinstance(d, dict):
         for key in list(d.keys()):
             if key == remove_key:
