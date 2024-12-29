@@ -1,9 +1,10 @@
 from datetime import datetime
+import logging
 from typing import Union
 
-import logging
-
 import logging_config
+
+logger = logging.getLogger(__name__)
 
 
 class ObjectTransformer:
@@ -101,9 +102,7 @@ class ObjectTransformer:
                     identifiers[j].pop("c:Identifier.Attributes")
                     # Set primary identifier attribute
                     if has_primary:
-                        identifiers[j]["IsPrimary"] = (
-                            primary_id == identifiers[j]["Id"]
-                        )
+                        identifiers[j]["IsPrimary"] = primary_id == identifiers[j]["Id"]
                 lst_entities[i]["Identifiers"] = identifiers
                 lst_entities[i].pop("c:Identifiers")
                 lst_entities[i].pop("c:PrimaryIdentifier")
@@ -125,9 +124,11 @@ class ObjectTransformer:
                 lst_attrs[i]["DomainID"] = id_domain
 
                 # Add matching domain data
-                keys_domain = {'Name', 'Code', 'DataType', 'Lenght', 'Precision'}
+                keys_domain = {"Name", "Code", "DataType", "Lenght", "Precision"}
                 attr_domain = dict_domains[id_domain]
-                attr_domain = {k: attr_domain[k] for k in keys_domain if k in attr_domain}
+                attr_domain = {
+                    k: attr_domain[k] for k in keys_domain if k in attr_domain
+                }
                 lst_attrs[i].update(attr_domain)
                 lst_attrs[i].pop("c:Domain")
         return lst_attrs
@@ -136,12 +137,12 @@ class ObjectTransformer:
         i = 0
         for i in range(len(lst_entities)):
             lst_entities[i] = self.clean_keys(lst_entities[i])
-            if 'c:SubShortcuts' in lst_entities[i]:
-                lst_attributes = lst_entities[i]['c:SubShortcuts']['o:Shortcut']
+            if "c:SubShortcuts" in lst_entities[i]:
+                lst_attributes = lst_entities[i]["c:SubShortcuts"]["o:Shortcut"]
                 lst_attributes = self.clean_keys(lst_attributes)
                 lst_entities[i]["Attributes"] = lst_attributes
-                lst_entities[i].pop('c:SubShortcuts')
+                lst_entities[i].pop("c:SubShortcuts")
         return lst_entities
 
-#    def attributes_external(self, lst_attrs: list) -> list:
 
+#    def attributes_external(self, lst_attrs: list) -> list:

@@ -3,6 +3,8 @@ import logging
 import logging_config
 from pd_object_transformer import ObjectTransformer
 
+logger = logging.getLogger(__name__)
+
 
 class ObjectExtractor:
     def __init__(self, pd_content):
