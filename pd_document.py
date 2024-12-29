@@ -24,7 +24,7 @@ class PDDocument:
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
         extractor = ObjectExtractor(pd_content=self.content)
-        self.lst_models = extractor.extract_model_data()
+        self.lst_models = extractor.model_data()
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
