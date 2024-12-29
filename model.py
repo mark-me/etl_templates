@@ -7,7 +7,7 @@ import xmltodict
 import logging_config
 from model_entity import Entity, Shortcut
 from model_mapping import Mapping
-from model_helpers import Domain, DataSourceModel, TargetModel
+from model_helpers import Domain, DataSourceModel
 from model_object import ModelObject
 
 logger = logging.getLogger(__name__)

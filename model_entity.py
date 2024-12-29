@@ -19,6 +19,12 @@ class Entity(ModelObject):
         # Setting attributes
         pd_attributes = dict_pd["c:Attributes"]["o:EntityAttribute"]
         self.dict_attributes = self.extract_attributes(pd_attributes)
+        if "c:Identifiers" in dict_pd:
+            pd_identifiers = dict_pd["c:Identifiers"]["o:Identifier"]
+            pd_identifier_primary = dict_pd["c:PrimaryIdentifier"]["o:Identifier"]
+            self.dict_identifiers = self.extract_identifiers(
+                pd_identifiers=pd_identifiers, pd_primary=pd_identifier_primary
+            )
 
     def extract_attributes(self, pd_objects: dict) -> dict:
         """Extract Power Designer entity attributes and turn them into objects
@@ -40,9 +46,26 @@ class Entity(ModelObject):
                 dict_attributes[attribute.id] = attribute
         else:
             logger.error(f"Table '{self.name}' has no attributes")
-
-
         return dict_attributes
+
+    def extract_identifiers(self, pd_identifiers: dict, pd_primary: dict) -> dict:
+        # Primary identifier
+        if isinstance(pd_primary, list):
+            logger.error(f"Entity '{self.name}' contains multiple primary identifiers")
+        id_primary = pd_primary["@Ref"]
+
+        # Retrieve all identifiers
+        dict_identifier = {}
+        if isinstance(pd_identifiers, dict):
+            pd_identifiers = [pd_identifiers]
+        for identifier in pd_identifiers:
+            id = EntityIdentifier(
+                dict_pd=identifier,
+                id_primary=id_primary,
+                dict_entity_attrs=self.dict_attributes,
+            )
+            dict_identifier[id.id] = id
+        return dict_identifier
 
     def as_dict(self) -> dict:
         """Uses the class data to generate a dictionary
@@ -58,6 +81,9 @@ class Entity(ModelObject):
         }
         dict_result["attributes"] = [
             item.__dict__ for item in list(self.dict_attributes.values())
+        ]
+        dict_result["identifiers"] = [
+            item.__dict__ for item in list(self.dict_identifiers.values())
         ]
         return dict_result
 
@@ -85,6 +111,43 @@ class EntityAttribute(ModelObject):
         else:
             self.mandatory = False
 
+
+class EntityIdentifier(ModelObject):
+    """Set of attributes that identify a subset of the entities"""
+
+    def __init__(self, dict_pd, id_primary: str, dict_entity_attrs: dict):
+        super().__init__(dict_pd)
+        self.is_primary = self.id == id_primary # Set primary identifier
+        # Attributes that are part of the identifier
+        self.dict_attributes = {}
+        dict_attributes = dict_pd["c:Identifier.Attributes"]["o:EntityAttribute"]
+        if isinstance(dict_attributes, dict):
+            dict_attributes = [dict_attributes]
+        for attribute in dict_attributes:
+            id_attribute = attribute["@Ref"]
+            self.dict_attributes["id"] = id_attribute
+            self.dict_attributes["name_attribute"] = dict_entity_attrs[
+                id_attribute
+            ].name
+            self.dict_attributes["code_attribute"] = dict_entity_attrs[
+                id_attribute
+            ].code
+
+    def as_dict(self) -> dict:
+        """Creates a dictionary of the object's data elements
+
+        Returns:
+            dict: Contains object data
+        """
+        dict_result = {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "is_primary": self.is_primary,
+        }
+        dict_result["attributes"] = [
+            item.__dict__ for item in list(self.dict_attributes.values())
+        ]
 
 
 class Shortcut(ModelObject):
@@ -147,6 +210,7 @@ class Shortcut(ModelObject):
 
 class ShortcutAttribute(ModelObject):
     """Attribute of a shortcut"""
+
     def __init__(self, dict_pd):
         """Creates a shortcut attribute object based on Power Designer data
 
