@@ -11,7 +11,7 @@ class ObjectExtractor:
         self.content = self.transformer.convert_timestamps(pd_content=self.content)
         self.dict_domains = self.__domains()
 
-    def model_data(self) -> list:
+    def models(self) -> list:
         dict_model_internal = self.__model_internal()
         lst_models_external = self.__models_external()
         # Combine models
@@ -27,7 +27,7 @@ class ObjectExtractor:
         model = self.transformer.clean_keys(model)
         model["IsDocumentModel"] = True
         model["Entities"] = lst_entity
-        model["Relationships"] = self.__relationship_data()
+        model["Relationships"] = self.__relationships()
         return model
 
     def __entities_internal(self) -> list:
@@ -86,7 +86,7 @@ class ObjectExtractor:
             lst_entities = [lst_entities]
         lst_entities = self.transformer.entities_external(lst_entities=lst_entities)
         for entity in lst_entities:
-            dict_result[entity['Id']] = entity
+            dict_result[entity["Id"]] = entity
         return dict_result
 
     def __domains(self) -> dict:
@@ -99,7 +99,7 @@ class ObjectExtractor:
             dict_domains[domain["Id"]] = domain
         return dict_domains
 
-    def __relationship_data(self) -> list:
+    def __relationships(self) -> list:
         lst_relationships = []
         lst_pd_relationships = self.content["c:Relationships"]["o:Relationship"]
         if isinstance(lst_pd_relationships, dict):
@@ -129,3 +129,8 @@ class ObjectExtractor:
             # Add to final result
             lst_relationships.append(relationship)
         return lst_relationships
+
+    def mappings(self, lst_entities: list, lst_attributes: list) -> list:
+        lst_mappings = self.content["c:Mappings"]["o:DefaultObjectMapping"]
+
+        return lst_mappings

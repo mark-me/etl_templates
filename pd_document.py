@@ -6,7 +6,6 @@ import xmltodict
 
 import logging_config
 from pd_object_extractor import ObjectExtractor
-from pd_object_transformer import ObjectTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,12 @@ class PDDocument:
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
         extractor = ObjectExtractor(pd_content=self.content)
-        self.lst_models = extractor.model_data()
+        self.lst_models = extractor.models()
+        lst_entities = self.__all_entities()
+        lst_attributes = self.__all_attributes()
+        self.lst_mappings = extractor.mappings(
+            lst_entities=lst_entities, lst_attributes=lst_attributes
+        )
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
@@ -42,7 +46,43 @@ class PDDocument:
         dict_data = dict_data["Model"]["o:RootObject"]["c:Children"]["o:Model"]
         return dict_data
 
-    def get_MDDE_model(self):
+    def __all_entities(self) -> dict:
+        dict_result = {}
+        for model in self.lst_models:
+            lst_entities = model["Entities"]
+            for entity in lst_entities:
+                dict_result[entity["Id"]] = {
+                    "id_model": model["Id"],
+                    "NameModel": model["Name"],
+                    "CodeModel": model["Code"],
+                    "IsDocumentModel": not model["IsDocumentModel"],
+                    "Name": entity["Name"],
+                    "Code": entity["Code"],
+                }
+        return dict_result
+
+    def __all_attributes(self) -> dict:
+        dict_result = {}
+        for model in self.lst_models:
+            lst_entities = model["Entities"]
+            for entity in lst_entities:
+                if "Attributes" in entity:
+                    lst_attributes = entity["Attributes"]
+                    for attr in lst_attributes:
+                        dict_result[attr["Id"]] = {
+                            "id_model": model["Id"],
+                            "NameModel": model["Name"],
+                            "CodeModel": model["Code"],
+                            "IsDocumentModel": not model["IsDocumentModel"],
+                            "IdEntity": entity["Id"],
+                            "NameEntity": entity["Name"],
+                            "CodeEntity": entity["Code"],
+                            "Name": attr["Name"],
+                            "Code": attr["Code"],
+                        }
+        return dict_result
+
+    def get_MDDE_model(self) -> list:
         lst_result = []
         for model in self.lst_models:
             dict_selection = {
@@ -50,7 +90,7 @@ class PDDocument:
                 "Name": model["Name"],
                 "Code": model["Name"],
                 "CreationDate": model["CreationDate"],
-                "ModificationDate": model["ModificationDate"]
+                "ModificationDate": model["ModificationDate"],
             }
             lst_result.append(dict_selection)
         return lst_result
@@ -58,22 +98,21 @@ class PDDocument:
     def get_MDDE_entity(self) -> list:
         lst_results = []
         for model in self.lst_models:
-            id_target = model["TargetID"]
-            name_schema = model["Code"]
             lst_entities = model["Entities"]
-            is_shortcut = not model["IsDocumentModel"]
             for entity in lst_entities:
                 dict_selection = {
                     "EntityID": entity["ObjectID"],
-                    "ModelID": id_target,
+                    "ModelID": model["TargetID"],
                     "EntityName": entity["Name"],
                     "EntityCode": entity["Code"],
-                    "EntitySchema": name_schema,  # TODO: Reroute schema, now comes from entity, can be set at model level?
-                    "EntityIsShortcut": str(is_shortcut),
-                    "EntityOrgID": "",      # TODO: When and how used?
-                    "ModelOrgID": "",       # TODO: When and how used?
+                    "EntitySchema": model[
+                        "Code"
+                    ],  # TODO: Reroute schema, now comes from entity, can be set at model level?
+                    "EntityIsShortcut": str(not model["IsDocumentModel"]),
+                    "EntityOrgID": "",  # TODO: When and how used?
+                    "ModelOrgID": "",  # TODO: When and how used?
                     "CreationDate": entity["CreationDate"],
-                    "ModificationDate": entity["ModificationDate"]
+                    "ModificationDate": entity["ModificationDate"],
                 }
                 lst_results.append(dict_selection)
         return lst_results
@@ -82,16 +121,16 @@ class PDDocument:
         # TODO: Complete
         lst_results = []
         # Only the attributes of the non-source model should be deployed
-        models_document = [model for model in self.lst_models if model["IsDocumentModel"]]
+        models_document = [
+            model for model in self.lst_models if model["IsDocumentModel"]
+        ]
         for model in models_document:
             lst_entities = model["Entities"]
             for entity in lst_entities:
                 id_entity = entity["ObjectID"]
                 lst_attributes = entity["Attributes"]
                 for attr in lst_attributes:
-                    dict_selection = {
-                        "AttributeID": attr["ObjectID"]
-                    }
+                    dict_selection = {"AttributeID": attr["ObjectID"]}
                     lst_results.append(dict_selection)
 
         return lst_results
