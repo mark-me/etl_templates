@@ -22,9 +22,8 @@ class PDDocument:
         """
         self.file_pd_ldm = file_pd_ldm
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
-
+        # Extracting data from the file
         extractor = ObjectExtractor(pd_content=self.content)
-
         self.lst_models = extractor.extract_model_data()
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
@@ -73,13 +72,14 @@ class PDDocument:
                     "EntityIsShortcut": str(is_shortcut),
                     "EntityOrgID": "",      # TODO: When and how used?
                     "ModelOrgID": "",       # TODO: When and how used?
-                    "CreationDate": entity["a:CreationDate"],
-                    "ModificationDate": entity["a:ModificationDate"]
+                    "CreationDate": entity["CreationDate"],
+                    "ModificationDate": entity["ModificationDate"]
                 }
                 lst_results.append(dict_selection)
         return lst_results
 
     def get_MDDE_attribute(self) -> list:
+        # TODO: Complete
         lst_results = []
         # Only the attributes of the non-source model should be deployed
         models_document = [model for model in self.lst_models if model["IsDocumentModel"]]
@@ -102,6 +102,6 @@ if __name__ == "__main__":
     document = PDDocument(file_pd_ldm=file_model)
     # Saving model objects
     lst_models = document.get_MDDE_model()
-    #lst_entities = document.get_MDDE_entity()
-    #lst_attributes = document.get_MDDE_attribute()
+    lst_entities = document.get_MDDE_entity()
+    lst_attributes = document.get_MDDE_attribute()
     print("Done")

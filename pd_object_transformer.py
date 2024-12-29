@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Union
 
 import logging
 
@@ -9,14 +10,25 @@ class ObjectTransformer:
     def __init__(self):
         self.timestamp_fields = ["a:CreationDate", "a:ModificationDate"]
 
-    def clean_keys(self, content: dict):
-        attrs = [key for key in list(content.keys()) if key[:1] == "@"]
-        for attr in attrs:
-            content[attr[1:]] = content.pop(attr)
-        attrs = [key for key in list(content.keys()) if key[:2] == "a:"]
-        for attr in attrs:
-            content[attr[2:]] = content.pop(attr)
-        return content
+    def clean_keys(self, content: Union[dict, list]):
+        if isinstance(content, dict):
+            lst_object = [content]
+        else:
+            lst_object = content
+        i = 0
+        for i in range(len(lst_object)):
+            attrs = [key for key in list(lst_object[i].keys()) if key[:1] == "@"]
+            for attr in attrs:
+                lst_object[i][attr[1:]] = lst_object[i].pop(attr)
+            attrs = [key for key in list(lst_object[i].keys()) if key[:2] == "a:"]
+            for attr in attrs:
+                lst_object[i][attr[2:]] = lst_object[i].pop(attr)
+
+        if isinstance(content, dict):
+            result = lst_object[0]
+        else:
+            result = lst_object
+        return result
 
     def convert_values_datetime(self, d: dict, convert_key: str) -> dict:
         """Remove keys from a nested dictionary, also from the dictionaries within lists (Currently not used)
@@ -45,7 +57,8 @@ class ObjectTransformer:
             pd_content = self.convert_values_datetime(pd_content, field)
         return pd_content
 
-    def entity_internal(self, lst_entities: list, dict_domains: dict) -> list:
+    def entities_internal(self, lst_entities: list, dict_domains: dict) -> list:
+        lst_entities = self.clean_keys(lst_entities)
         i = 0
         for i in range(len(lst_entities)):
             # Reroute attributes
@@ -59,7 +72,7 @@ class ObjectTransformer:
             lst_entities[i].pop("c:Attributes")
             # Create subset of attributes to enrich identifier attributes
             dict_attrs = {
-                attr["@Id"]: {"Name": attr["a:Name"], "Code": attr["a:Code"]}
+                attr["Id"]: {"Name": attr["Name"], "Code": attr["Code"]}
                 for attr in lst_attrs
             }
 
@@ -89,7 +102,7 @@ class ObjectTransformer:
                     # Set primary identifier attribute
                     if has_primary:
                         identifiers[j]["IsPrimary"] = (
-                            primary_id == identifiers[j]["@Id"]
+                            primary_id == identifiers[j]["Id"]
                         )
                 lst_entities[i]["Identifiers"] = identifiers
                 lst_entities[i].pop("c:Identifiers")
@@ -118,3 +131,17 @@ class ObjectTransformer:
                 lst_attrs[i].update(attr_domain)
                 lst_attrs[i].pop("c:Domain")
         return lst_attrs
+
+    def entities_external(self, lst_entities: list) -> list:
+        i = 0
+        for i in range(len(lst_entities)):
+            lst_entities[i] = self.clean_keys(lst_entities[i])
+            if 'c:SubShortcuts' in lst_entities[i]:
+                lst_attributes = lst_entities[i]['c:SubShortcuts']['o:Shortcut']
+                lst_attributes = self.clean_keys(lst_attributes)
+                lst_entities[i]["Attributes"] = lst_attributes
+                lst_entities[i].pop('c:SubShortcuts')
+        return lst_entities
+
+#    def attributes_external(self, lst_attrs: list) -> list:
+

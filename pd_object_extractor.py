@@ -28,10 +28,11 @@ class ObjectExtractor:
         model["IsDocumentModel"] = True
         model["Entities"] = lst_entity
         model["Relationships"] = self.extract_relationship_data()
+        return model
 
     def extract_entities_internal(self) -> list:
         lst_entity = self.content["c:Entities"]["o:Entity"]
-        self.transformer.entity_internal(lst_entity, dict_domains=self.dict_domains)
+        self.transformer.entities_internal(lst_entity, dict_domains=self.dict_domains)
         return lst_entity
 
     def extract_models_external(self) -> list:
@@ -69,7 +70,8 @@ class ObjectExtractor:
         # Assign entity data from 'target models' to external models
         for i in range(len(lst_models_external)):
             new_model = lst_models_external[i]
-            new_model["Entities"] = dict_target_models[new_model["a:TargetID"]][
+            new_model = self.transformer.clean_keys(new_model)
+            new_model["Entities"] = dict_target_models[new_model["TargetID"]][
                 "Entities"
             ]
             lst_models_external[i] = new_model
@@ -79,11 +81,12 @@ class ObjectExtractor:
     def extract_entities_external(self) -> dict:
         # External model entity data
         dict_result = {}
-        lst_entity_external = self.content["c:Entities"]["o:Shortcut"]
-        if isinstance(lst_entity_external, dict):
-            lst_entity_external = [lst_entity_external]
-        for entity_external in lst_entity_external:
-            dict_result[entity_external["@Id"]] = entity_external
+        lst_entities = self.content["c:Entities"]["o:Shortcut"]
+        if isinstance(lst_entities, dict):
+            lst_entities = [lst_entities]
+        lst_entities = self.transformer.entities_external(lst_entities=lst_entities)
+        for entity in lst_entities:
+            dict_result[entity['Id']] = entity
         return dict_result
 
     def extract_domains(self) -> dict:
