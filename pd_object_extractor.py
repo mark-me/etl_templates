@@ -1,13 +1,15 @@
 import logging
 
 import logging_config
-from pd_object_cleaner import ObjectCleaner
+from pd_object_transformer import ObjectTransformer
+
 
 class ObjectExtractor:
     def __init__(self, pd_content):
         self.content = pd_content
-        self.cleaner = ObjectCleaner()
-        self.content = self.cleaner.convert_timestamps(pd_content=self.content)
+        self.transformer = ObjectTransformer()
+        self.content = self.transformer.convert_timestamps(pd_content=self.content)
+        self.dict_domains = self.extract_domains()
 
     def extract_model_data(self) -> list:
         dict_model_internal = self.extract_model_internal()
@@ -22,13 +24,14 @@ class ObjectExtractor:
         if isinstance(lst_entity, dict):
             lst_entity = [lst_entity]
         model = self.content["c:GenerationOrigins"]["o:Shortcut"]  # Document model
+        model = self.transformer.clean_keys(model)
         model["IsDocumentModel"] = True
         model["Entities"] = lst_entity
         model["Relationships"] = self.extract_relationship_data()
 
     def extract_entities_internal(self) -> list:
         lst_entity = self.content["c:Entities"]["o:Entity"]
-        self.cleaner.entity_internal(lst_entity)
+        self.transformer.entity_internal(lst_entity, dict_domains=self.dict_domains)
         return lst_entity
 
     def extract_models_external(self) -> list:
@@ -83,10 +86,15 @@ class ObjectExtractor:
             dict_result[entity_external["@Id"]] = entity_external
         return dict_result
 
-    def extract_domain_data(self) -> list:
-        lst_domains = []
+    def extract_domains(self) -> dict:
+        dict_domains = {}
+        lst_domains = self.content["c:Domains"]["o:Domain"]
         if isinstance(lst_domains, dict):
             lst_domains = [lst_domains]
+        for domain in lst_domains:
+            domain = self.transformer.clean_keys(domain)
+            dict_domains[domain["Id"]] = domain
+        return dict_domains
 
     def extract_relationship_data(self) -> list:
         lst_relationships = []
