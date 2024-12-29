@@ -8,6 +8,7 @@ class Model:
     name
     target_id
     Entities
+    Relationships
 
 
 class ModelObject:
