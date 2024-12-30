@@ -34,6 +34,10 @@ The current code is based on my own sample data structure, but we want to move t
 
 ## Future developments
 
-* [Merge loading for mappings](https://techcommunity.microsoft.com/blog/azuresynapseanalyticsblog/merge-t-sql-for-dedicated-sql-pools-is-now-ga/3634331)
+* Create templates and procedures for testing on model constraints:
+  * Entity identifier
+  * Relationships
+* Add more elaborate logging
 * Added example docstrings and documentation generation as inspiration. Currently the simple [pydoc](https://docs.python.org/3/library/pydoc.html) is used, as the project extends we should consider switching to [Sphinx](https://www.sphinx-doc.org/en/master/)
 * Antecedents and precedents reporting for escalation business processes using [graphs](https://python.igraph.org/en/latest/tutorial.html) and [graph visualizations](https://networkx.org/). [Tutorial](https://www.youtube.com/watch?v=D8zXTiOLrYA&ab_channel=PythonTutorialsforDigitalHumanities)
+* [Merge loading for mappings](https://techcommunity.microsoft.com/blog/azuresynapseanalyticsblog/merge-t-sql-for-dedicated-sql-pools-is-now-ga/3634331)
