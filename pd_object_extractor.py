@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class ObjectExtractor:
+    """ Collection of functions used to extract the relevant objects from a Power Designer logical datamodel document"""
     def __init__(self, pd_content):
         self.content = pd_content
         self.transformer = ObjectTransformer()
@@ -14,6 +15,11 @@ class ObjectExtractor:
         self.dict_domains = self.__domains()
 
     def models(self) -> list:
+        """Retrieves all models and their corresponding objects used in the PowerDesigner document
+
+        Returns:
+            list: List of internal model and external models
+        """
         dict_model_internal = self.__model_internal()
         lst_models_external = self.__models_external()
         # Combine models
@@ -21,6 +27,11 @@ class ObjectExtractor:
         return lst_models
 
     def __model_internal(self) -> dict:
+        """Retrieves the data on the model which is maintained in the loaded Power Designer document
+
+        Returns:
+            dict: All the model's data
+        """
         # Model add entity data
         lst_entity = self.__entities_internal()
         if isinstance(lst_entity, dict):
@@ -33,17 +44,28 @@ class ObjectExtractor:
         return model
 
     def __entities_internal(self) -> list:
+        """Returns all entities of the Power Designer document's model with their attributes and identifiers
+
+        Returns:
+            list: Entities
+        """
         lst_entity = self.content["c:Entities"]["o:Entity"]
         self.transformer.entities_internal(lst_entity, dict_domains=self.dict_domains)
         return lst_entity
 
     def __models_external(self) -> list:
+        """Retrieve data on models that are maintained outside of the loaded Power Designer document, but are used for horizontal lineage
+
+        Returns:
+            list: List of external models with all their corresponding elements
+        """
         # External models
         lst_models_external = self.content["c:SourceModels"][
             "o:Shortcut"
         ]  # External models
         for i in range(len(lst_models_external)):
             new_model = lst_models_external[i]
+            logger.debug(f"Found external datamodel '{new_model["a:Name"]}' in 'c:SourceModels'")
             new_model["IsDocumentModel"] = False
             lst_models_external[i] = new_model
 
@@ -54,11 +76,13 @@ class ObjectExtractor:
         lst_target_model = self.content["c:TargetModels"]["o:TargetModel"]
         dict_target_models = {}
         for i in range(len(lst_target_model)):
+            logger.debug(f"Found target references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:TargetModels']['o:TargetModel']")
             shortcuts = lst_target_model[i]["c:SessionShortcuts"]["o:Shortcut"]
             if isinstance(shortcuts, dict):
                 shortcuts = [shortcuts]
             shortcuts = [i["@Ref"] for i in shortcuts]
             # Add external entity data
+            logger.debug(f"Found shortcut references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:SessionShortcuts']['o:Shortcut']")
             shortcuts_objects = [
                 dict_entities_external[i]
                 for i in shortcuts
@@ -72,6 +96,7 @@ class ObjectExtractor:
         # Assign entity data from 'target models' to external models
         for i in range(len(lst_models_external)):
             new_model = lst_models_external[i]
+            logger.debug(f"Added shortcut references for external datamodel '{lst_models_external[i]["a:Name"]}'")
             new_model = self.transformer.clean_keys(new_model)
             new_model["Entities"] = dict_target_models[new_model["TargetID"]][
                 "Entities"
@@ -81,6 +106,11 @@ class ObjectExtractor:
         return lst_models_external
 
     def __entities_external(self) -> dict:
+        """Retrieve the Entities of the external model and their associated entities
+
+        Returns:
+            dict: A dict of Entities, where each key contains data on an Entity and their attributes as a value
+        """
         # External model entity data
         dict_result = {}
         lst_entities = self.content["c:Entities"]["o:Shortcut"]
@@ -88,6 +118,7 @@ class ObjectExtractor:
             lst_entities = [lst_entities]
         lst_entities = self.transformer.entities_external(lst_entities=lst_entities)
         for entity in lst_entities:
+            logger.debug(f"Found exteral entity shortcut for '{entity["Name"]}'")
             dict_result[entity["Id"]] = entity
         return dict_result
 
