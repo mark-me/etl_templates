@@ -216,6 +216,7 @@ class ObjectTransformer:
             test_composition = lst_compositions[i]
             # Join items (ON clause)
             # TODO : Figure this shit out... Where is the join operator?
+            # <a:ExtendedAttributesText>{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,63={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,2=&lt;&gt;
             if "c:ExtendedCompositions" in lst_compositions[i]:
                 test = lst_compositions[i]["c:ExtendedCompositions"][
                     "o:ExtendedComposition"
