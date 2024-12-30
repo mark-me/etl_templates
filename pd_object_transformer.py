@@ -240,7 +240,7 @@ class ObjectTransformer:
             ][0]
             id_entity = entity["c:Content"][type_entity]["@Ref"]
             entity = dict_entities[id_entity]
-        composition['Entity'] = entity
+        composition["Entity"] = entity
         composition["EntityAlias"] = entity["Id"]
         composition.pop("c:ExtendedCollections")
         return composition
@@ -268,42 +268,67 @@ class ObjectTransformer:
     ) -> dict:
         # TODO : Figure this shit out... Where is the join operator?
         # <a:ExtendedAttributesText>{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,63={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,2=&lt;&gt;
-        lst_conditions = composition["c:ExtendedCompositions"][
-                    "o:ExtendedComposition"
-                ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
-        if 'c:ExtendedCollections' in lst_conditions:
-            lst_conditions = lst_conditions['c:ExtendedCollections']['o:ExtendedCollection']
+        lst_conditions = composition["c:ExtendedCompositions"]["o:ExtendedComposition"][
+            "c:ExtendedComposition.Content"
+        ]["o:ExtendedSubObject"]
+        if "c:ExtendedCollections" in lst_conditions:
+            lst_conditions = lst_conditions["c:ExtendedCollections"][
+                "o:ExtendedCollection"
+            ]
         lst_conditions = self.clean_keys(lst_conditions)
 
-        print("me")
-        # for j in range(len(lst_conditions)):
-        #     condition = lst_conditions[j]
-        #     if 'ExtendedAttributesText' in condition:
-        #         # TODO: extract join condition operator
-        #         pass
-        #     else:
-        #         condition_operator = "="
-        #     type_join_item = condition["Name"]
-        #     if type_join_item == "mdde_ChildAttribute":
-        #         print("Child attribute")
-        #         id_attr = condition["c:Content"]["o:EntityAttribute"]["@Ref"]
-        #         condition["AttributeChild"] = dict_attributes[id_attr]
-        #         condition.pop("c:Content")
-        #     elif type_join_item == "mdde_ParentSourceObject":
-        #         # TODO: Link to from composition
-        #         print("Link to FROM")
-        #     elif type_join_item == "mdde_ParentAttribute":
-        #         type_entity = [
-        #             value
-        #             for value in ["o:Entity", "o:Shortcut"]
-        #             if value in condition["c:Content"]
-        #         ][0]
-        #         id_attr = condition["c:Content"][type_entity]["@Ref"]
-        #         condition["AttributeParent"] = dict_attributes[id_attr]
-        #         condition.pop("c:Content")
-        #     else:
-        #         logger.warning(f"Unhandled kind of join '{type_join_item}'")
-        #     lst_conditions[j] = condition
-        # composition["JoinConditions"] = lst_conditions
-        # composition.pop("c:ExtendedCompositions")
+        for j in range(len(lst_conditions)):
+            condition = lst_conditions[j]
+            condition_operator = "="
+            if "ExtendedAttributesText" in condition:
+                condition_operator = self.__join_condition_operator(
+                    condition["ExtendedAttributesText"]
+                )
+            condition["Operator"] = condition_operator
+            type_join_item = condition["Name"]
+            if type_join_item == "mdde_ChildAttribute":
+                # Child attribute
+                # TODO: implement alias to child entity
+                print("Child attribute")
+                id_attr = condition["c:Content"]["o:EntityAttribute"]["@Ref"]
+                condition["AttributeChild"] = dict_attributes[id_attr]
+                condition.pop("c:Content")
+            elif type_join_item == "mdde_ParentSourceObject":
+                # Alias to point to a composition entity
+                condition["ParentAlias"] = condition['c:Content']['o:ExtendedSubObject']['@Ref']
+                condition.pop("c:Content")
+            elif type_join_item == "mdde_ParentAttribute":
+                # Parent attribute
+                type_entity = [
+                    value
+                    for value in ["o:Entity", "o:Shortcut"]
+                    if value in condition["c:Content"]
+                ][0]
+                id_attr = condition["c:Content"][type_entity]["@Ref"]
+                condition["AttributeParent"] = dict_attributes[id_attr]
+                condition.pop("c:Content")
+            else:
+                logger.warning(f"Unhandled kind of join item in condition '{type_join_item}'")
+            lst_conditions[j] = condition
+        composition["JoinConditions"] = lst_conditions
+        composition.pop("c:ExtendedCompositions")
         return composition
+
+    def __join_condition_operator(self, extended_attrs_text: str) -> str:
+        """Extracting join condition operator from a very specific Power Designer attribute
+
+        Args:
+            extended_attrs_text (str): ExtendedAttributesText
+
+        Returns:
+            str: Join condition operator
+        """
+        # TODO: extract join condition operator
+        str_proceeder = "mdde_JoinOperator,"
+        idx_start = extended_attrs_text.find(str_proceeder) + len(str_proceeder)
+        idx_end = extended_attrs_text.find("\n", idx_start)
+        idx_end = idx_end if idx_end > -1 else len(extended_attrs_text) + 1
+        join_type = extended_attrs_text[idx_start:idx_end]
+        idx_start = join_type.find("=") + 1
+        join_type = join_type[idx_start:].upper()
+        return join_type
