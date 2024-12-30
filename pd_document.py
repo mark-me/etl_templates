@@ -143,7 +143,6 @@ class PDDocument:
         for model in models_document:
             lst_entities = model["Entities"]
             for entity in lst_entities:
-                id_entity = entity["ObjectID"]
                 lst_attributes = entity["Attributes"]
                 for attr in lst_attributes:
                     dict_selection = {"AttributeID": attr["ObjectID"]}
