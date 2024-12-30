@@ -23,11 +23,15 @@ class PDDocument:
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
         extractor = ObjectExtractor(pd_content=self.content)
+        # Extracting models
+        logger.debug("Start model extraction")
         self.lst_models = extractor.models()
-        lst_entities = self.__all_entities()
-        lst_attributes = self.__all_attributes()
+        # Extract mappings
+        logger.debug("Start mapping extraction")
+        dict_entities = self.__all_entities()
+        dict_attributes = self.__all_attributes()
         self.lst_mappings = extractor.mappings(
-            lst_entities=lst_entities, lst_attributes=lst_attributes
+            dict_entities=dict_entities, dict_attributes=dict_attributes
         )
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
@@ -47,21 +51,32 @@ class PDDocument:
         return dict_data
 
     def __all_entities(self) -> dict:
+        """Retrieves all entities regardless of the model they belong to
+
+        Returns:
+            dict: Each dictionary value represents an entity, the key is the internal ID
+        """
         dict_result = {}
         for model in self.lst_models:
             lst_entities = model["Entities"]
             for entity in lst_entities:
                 dict_result[entity["Id"]] = {
-                    "id_model": model["Id"],
+                    "Id": entity["Id"],
+                    "Name": entity["Name"],
+                    "Code": entity["Code"],
+                    "ModelID": model["Id"],
                     "NameModel": model["Name"],
                     "CodeModel": model["Code"],
                     "IsDocumentModel": not model["IsDocumentModel"],
-                    "Name": entity["Name"],
-                    "Code": entity["Code"],
                 }
         return dict_result
 
     def __all_attributes(self) -> dict:
+        """Retrieves all attributes regardless of the model or entity they belong to
+
+        Returns:
+            dict: Each dictionary value represents an attribute, the key is the internal ID
+        """
         dict_result = {}
         for model in self.lst_models:
             lst_entities = model["Entities"]
@@ -70,6 +85,9 @@ class PDDocument:
                     lst_attributes = entity["Attributes"]
                     for attr in lst_attributes:
                         dict_result[attr["Id"]] = {
+                            "Id": attr["Id"],
+                            "Name": attr["Name"],
+                            "Code": attr["Code"],
                             "id_model": model["Id"],
                             "NameModel": model["Name"],
                             "CodeModel": model["Code"],
@@ -77,8 +95,6 @@ class PDDocument:
                             "IdEntity": entity["Id"],
                             "NameEntity": entity["Name"],
                             "CodeEntity": entity["Code"],
-                            "Name": attr["Name"],
-                            "Code": attr["Code"],
                         }
         return dict_result
 

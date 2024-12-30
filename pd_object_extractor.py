@@ -7,7 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 class ObjectExtractor:
-    """ Collection of functions used to extract the relevant objects from a Power Designer logical datamodel document"""
+    """Collection of functions used to extract the relevant objects from a Power Designer logical datamodel document"""
+
     def __init__(self, pd_content):
         self.content = pd_content
         self.transformer = ObjectTransformer()
@@ -65,7 +66,9 @@ class ObjectExtractor:
         ]  # External models
         for i in range(len(lst_models_external)):
             new_model = lst_models_external[i]
-            logger.debug(f"Found external datamodel '{new_model["a:Name"]}' in 'c:SourceModels'")
+            logger.debug(
+                f"Found external datamodel '{new_model["a:Name"]}' in 'c:SourceModels'"
+            )
             new_model["IsDocumentModel"] = False
             lst_models_external[i] = new_model
 
@@ -76,13 +79,17 @@ class ObjectExtractor:
         lst_target_model = self.content["c:TargetModels"]["o:TargetModel"]
         dict_target_models = {}
         for i in range(len(lst_target_model)):
-            logger.debug(f"Found target references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:TargetModels']['o:TargetModel']")
+            logger.debug(
+                f"Found target references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:TargetModels']['o:TargetModel']"
+            )
             shortcuts = lst_target_model[i]["c:SessionShortcuts"]["o:Shortcut"]
             if isinstance(shortcuts, dict):
                 shortcuts = [shortcuts]
             shortcuts = [i["@Ref"] for i in shortcuts]
             # Add external entity data
-            logger.debug(f"Found shortcut references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:SessionShortcuts']['o:Shortcut']")
+            logger.debug(
+                f"Found shortcut references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:SessionShortcuts']['o:Shortcut']"
+            )
             shortcuts_objects = [
                 dict_entities_external[i]
                 for i in shortcuts
@@ -96,7 +103,9 @@ class ObjectExtractor:
         # Assign entity data from 'target models' to external models
         for i in range(len(lst_models_external)):
             new_model = lst_models_external[i]
-            logger.debug(f"Added shortcut references for external datamodel '{lst_models_external[i]["a:Name"]}'")
+            logger.debug(
+                f"Added shortcut references for external datamodel '{lst_models_external[i]["a:Name"]}'"
+            )
             new_model = self.transformer.clean_keys(new_model)
             new_model["Entities"] = dict_target_models[new_model["TargetID"]][
                 "Entities"
@@ -163,7 +172,11 @@ class ObjectExtractor:
             lst_relationships.append(relationship)
         return lst_relationships
 
-    def mappings(self, lst_entities: list, lst_attributes: list) -> list:
+    def mappings(self, dict_entities: list, dict_attributes: list) -> list:
         lst_mappings = self.content["c:Mappings"]["o:DefaultObjectMapping"]
-
+        self.transformer.mappings(
+            lst_mappings=lst_mappings,
+            dict_entities=dict_entities,
+            dict_attributes=dict_attributes,
+        )
         return lst_mappings

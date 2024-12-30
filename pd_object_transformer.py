@@ -8,8 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class ObjectTransformer:
-    """Collection of functions that transform structures and data on Power Designer objects
+    """Collection of functions that transform structures and data on Power Designer objects.
+
+    Transforming structures is done to simplify 'querying' the data for ETL and DDL
     """
+
     def __init__(self):
         self.timestamp_fields = ["a:CreationDate", "a:ModificationDate"]
 
@@ -26,7 +29,6 @@ class ObjectTransformer:
             lst_object = [content]
         else:
             lst_object = content
-        i = 0
         for i in range(len(lst_object)):
             attrs = [key for key in list(lst_object[i].keys()) if key[:1] == "@"]
             for attr in attrs:
@@ -42,7 +44,7 @@ class ObjectTransformer:
         return result
 
     def convert_values_datetime(self, d: dict, convert_key: str) -> dict:
-        """Converts a dictionary value containing a Unix timestamp to a datetime object
+        """Converts all (nested) dictionary entries with a specified name value containing a Unix timestamp to a datetime object
 
         Args:
             d (dict): Dictionary contains the timestamp value
@@ -70,7 +72,6 @@ class ObjectTransformer:
 
     def entities_internal(self, lst_entities: list, dict_domains: dict) -> list:
         lst_entities = self.clean_keys(lst_entities)
-        i = 0
         for i in range(len(lst_entities)):
             # Reroute attributes
             lst_attrs = lst_entities[i]["c:Attributes"]["o:EntityAttribute"]
@@ -99,9 +100,9 @@ class ObjectTransformer:
                 identifiers = lst_entities[i]["c:Identifiers"]["o:Identifier"]
                 if isinstance(identifiers, dict):
                     identifiers = [identifiers]
+                identifiers = self.clean_keys(identifiers)
                 # Clean and transform indentifier data
                 for j in range(len(identifiers)):
-                    identifiers[j] = self.clean_keys(identifiers[j])
                     lst_attr_id = identifiers[j]["c:Identifier.Attributes"][
                         "o:EntityAttribute"
                     ]
@@ -122,10 +123,8 @@ class ObjectTransformer:
         return lst_entities
 
     def attributes_internal(self, lst_attrs: list, dict_domains: list) -> list:
-        i = 0
+        lst_attrs = self.clean_keys(lst_attrs)
         for i in range(len(lst_attrs)):
-            lst_attrs[i] = self.clean_keys(lst_attrs[i])
-
             # Change domain data
             if "c:Domain" in lst_attrs[i]:
                 # Reroute domain data
@@ -143,9 +142,8 @@ class ObjectTransformer:
         return lst_attrs
 
     def entities_external(self, lst_entities: list) -> list:
-        i = 0
+        lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
-            lst_entities[i] = self.clean_keys(lst_entities[i])
             if "c:SubShortcuts" in lst_entities[i]:
                 lst_attributes = lst_entities[i]["c:SubShortcuts"]["o:Shortcut"]
                 lst_attributes = self.clean_keys(lst_attributes)
@@ -153,5 +151,145 @@ class ObjectTransformer:
                 lst_entities[i].pop("c:SubShortcuts")
         return lst_entities
 
+    def mappings(
+        self, lst_mappings: list, dict_entities: list, dict_attributes: list
+    ) -> list:
+        lst_mappings = self.clean_keys(lst_mappings)
+        i = 0
+        for i in range(len(lst_mappings)):
+            logger.debug(f"Starting mapping transform for '{lst_mappings[i]['Name']}'")
+            # Target entity rerouting and enriching
+            id_entity_target = lst_mappings[i]["c:Classifier"]["o:Entity"]["@Ref"]
+            lst_mappings[i]["EntityTarget"] = dict_entities[id_entity_target]
+            lst_mappings[i].pop("c:Classifier")
+            # Source entities rerouting and enriching
+            lst_source_entity = []
+            for entity_type in ["o:Entity", "o:Shortcut"]:
+                if entity_type in lst_mappings[i]["c:SourceClassifiers"]:
+                    source_entity = lst_mappings[i]["c:SourceClassifiers"][entity_type]
+                    if isinstance(source_entity, dict):
+                        source_entity = [source_entity]
+                    source_entity = [d["@Ref"] for d in source_entity]
+                    lst_source_entity = lst_source_entity + source_entity
+            lst_source_entity = [dict_entities[item] for item in lst_source_entity]
+            lst_mappings[i]["EntitiesSource"] = lst_source_entity
+            lst_mappings[i].pop("c:SourceClassifiers")
+            # Reroute datasource
+            # TODO: Research role of DataSource
+            lst_mappings[i]["DataSourceID"] = lst_mappings[i]["c:DataSource"][
+                "o:DefaultDataSource"
+            ]["@Ref"]
+            lst_mappings[i].pop("c:DataSource")
 
-#    def attributes_external(self, lst_attrs: list) -> list:
+            # Rerouting compositionObjects
+            lst_compositions = lst_mappings[i]["c:ExtendedCompositions"][
+                "o:ExtendedComposition"
+            ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+            lst_compositions = self.__mapping_compositions(
+                lst_compositions=lst_compositions,
+                dict_entities=dict_entities,
+                dict_attributes=dict_attributes,
+            )
+
+            lst_mappings[i]["CompositionObject"] = lst_compositions
+            lst_mappings[i].pop("c:ExtendedCompositions")
+
+        return lst_mappings
+
+    def __mapping_compositions(
+        self, lst_compositions: list, dict_entities: dict, dict_attributes: dict
+    ) -> list:
+        lst_compositions = self.clean_keys(lst_compositions)
+        for i in range(len(lst_compositions)):
+            # Determine composition clause (FROM/JOIN)
+            lst_compositions[i]["CompositionType"] = self.__mapping_extract_join_type(
+                lst_compositions[i]["ExtendedAttributesText"]
+            )
+            # Determine entity involved
+            collection = lst_compositions[i]["c:ExtendedCollections"][
+                "o:ExtendedCollection"
+            ]
+            collection = self.__composition_entities(dict_entities, collection)
+            lst_compositions[i]["Entities"] = collection
+            lst_compositions[i].pop("c:ExtendedCollections")
+
+            test_composition = lst_compositions[i]
+            # Join items (ON clause)
+            # TODO : Figure this shit out... Where is the join operator?
+            if "c:ExtendedCompositions" in lst_compositions[i]:
+                test = lst_compositions[i]["c:ExtendedCompositions"][
+                    "o:ExtendedComposition"
+                ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+                lst_join_items = lst_compositions[i]["c:ExtendedCompositions"][
+                    "o:ExtendedComposition"
+                ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"][
+                    "c:ExtendedCollections"
+                ]["o:ExtendedCollection"]
+                lst_compositions[2]["c:ExtendedCompositions"]["o:ExtendedComposition"][
+                    "c:ExtendedComposition.Content"
+                ]["o:ExtendedSubObject"]
+                lst_join_items = self.__composition_join_items(
+                    lst_join_items=lst_join_items, dict_attributes=dict_attributes
+                )
+                lst_compositions[i]["JoinAttributes"] = lst_join_items
+                lst_compositions[i].pop("c:ExtendedCompositions")
+
+        return lst_compositions
+
+    def __composition_entities(self, collection: dict, dict_entities: dict) -> dict:
+        collection = self.clean_keys(collection)
+        if "c:Content" in collection:
+            type_entity = [
+                value
+                for value in ["o:Entity", "o:Shortcut"]
+                if value in collection["c:Content"]
+            ][0]
+            id_entity = collection["c:Content"][type_entity]["@Ref"]
+            collection["Entity"] = dict_entities[id_entity]
+            collection.pop("c:Content")
+        return collection
+
+    def __composition_join_items(
+        self, lst_join_items: list, dict_attributes: dict
+    ) -> list:
+        lst_join_items = self.clean_keys(lst_join_items)
+        for j in range(len(lst_join_items)):
+            type_join_item = lst_join_items[j]["Name"]
+            if type_join_item == "mdde_ChildAttribute":
+                print("Child attribute")
+                id_attr = lst_join_items[j]["c:Content"]["o:EntityAttribute"]["@Ref"]
+                lst_join_items[j]["AttributeChild"] = dict_attributes[id_attr]
+                lst_join_items[j].pop("c:Content")
+            elif type_join_item == "mdde_ParentSourceObject":
+                # TODO: Link to from composition
+                print("Link to FROM")
+            elif type_join_item == "mdde_ParentAttribute":
+                type_entity = [
+                    value
+                    for value in ["o:Entity", "o:Shortcut"]
+                    if value in lst_join_items[j]["c:Content"]
+                ][0]
+                id_attr = lst_join_items[j]["c:Content"][type_entity]["@Ref"]
+                lst_join_items[j]["AttributeParent"] = dict_attributes[id_attr]
+                lst_join_items[j].pop("c:Content")
+            else:
+                logger.warning(f"Unhandled kind of join '{type_join_item}'")
+        return lst_join_items
+
+    def __mapping_extract_join_type(self, extended_attrs_text: str) -> str:
+        """Extracting the FROM or JOIN type clause from a very specific Power Designer attributes
+
+        Args:
+            extended_attrs_text (str): ExtendedAttributesText
+
+        Returns:
+            str: FROM or JOIN type
+        """
+        str_proceeder = "mdde_JoinType,"
+        idx_start = extended_attrs_text.find(str_proceeder) + len(str_proceeder)
+        idx_end = extended_attrs_text.find("\n", idx_start)
+        idx_end = idx_end if idx_end > -1 else len(extended_attrs_text) + 1
+        join_type = extended_attrs_text[idx_start:idx_end]
+        idx_start = join_type.find("=") + 1
+        join_type = join_type[idx_start:].upper()
+        return join_type
