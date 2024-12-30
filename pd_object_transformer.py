@@ -73,63 +73,40 @@ class ObjectTransformer:
     def entities_internal(self, lst_entities: list, dict_domains: dict) -> list:
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
+            entity = lst_entities[i]
+
             # Reroute attributes
-            lst_attrs = lst_entities[i]["c:Attributes"]["o:EntityAttribute"]
-            if isinstance(lst_attrs, dict):
-                lst_attrs = [lst_attrs]
-            lst_attrs = self.attributes_internal(
-                lst_attrs=lst_attrs, dict_domains=dict_domains
+            entity = self.__entity_internal_attributes(
+                entity=entity, dict_domains=dict_domains
             )
-            lst_entities[i]["Attributes"] = lst_attrs
-            lst_entities[i].pop("c:Attributes")
             # Create subset of attributes to enrich identifier attributes
             dict_attrs = {
-                attr["Id"]: {"Name": attr["Name"], "Code": attr["Code"]}
-                for attr in lst_attrs
+                d["Id"]: {"Name": d["Name"], "Code": d["Code"]}
+                for d in entity["Attributes"]
             }
 
-            # Set primary identifiers as an attribute of the identifiers
-            has_primary = "c:PrimaryIdentifier" in lst_entities[i]
-            if has_primary:
-                primary_id = lst_entities[i]["c:PrimaryIdentifier"]["o:Identifier"][
-                    "@Ref"
-                ]
+            # Identifiers and primary identifier
+            entity = self.__entity_internal_identifiers(
+                entity=entity, dict_attrs=dict_attrs
+            )
 
-            # Reroute indentifiers
-            if "c:Identifiers" in lst_entities[i]:
-                identifiers = lst_entities[i]["c:Identifiers"]["o:Identifier"]
-                if isinstance(identifiers, dict):
-                    identifiers = [identifiers]
-                identifiers = self.clean_keys(identifiers)
-                # Clean and transform indentifier data
-                for j in range(len(identifiers)):
-                    lst_attr_id = identifiers[j]["c:Identifier.Attributes"][
-                        "o:EntityAttribute"
-                    ]
-                    if isinstance(lst_attr_id, dict):
-                        lst_attr_id = [lst_attr_id]
-                    lst_attr_id = [dict_attrs[d["@Ref"]] for d in lst_attr_id]
-                    identifiers[j]["Attributes"] = lst_attr_id
-                    identifiers[j].pop("c:Identifier.Attributes")
-                    # Set primary identifier attribute
-                    if has_primary:
-                        identifiers[j]["IsPrimary"] = primary_id == identifiers[j]["Id"]
-                lst_entities[i]["Identifiers"] = identifiers
-                lst_entities[i].pop("c:Identifiers")
-                lst_entities[i].pop("c:PrimaryIdentifier")
-                lst_entities[i] = self.clean_keys(lst_entities[i])
-                # Reroute default mapping
-                # TODO: research role DefaultMapping
+            # Reroute default mapping
+            # TODO: research role DefaultMapping
+            lst_entities[i] = entity
         return lst_entities
 
-    def attributes_internal(self, lst_attrs: list, dict_domains: list) -> list:
+    def __entity_internal_attributes(self, entity: dict, dict_domains: list) -> dict:
+        lst_attrs = entity["c:Attributes"]["o:EntityAttribute"]
+        if isinstance(lst_attrs, dict):
+            lst_attrs = [lst_attrs]
         lst_attrs = self.clean_keys(lst_attrs)
         for i in range(len(lst_attrs)):
             # Change domain data
-            if "c:Domain" in lst_attrs[i]:
+            attr = lst_attrs[i]
+            if "c:Domain" in attr:
                 # Reroute domain data
-                id_domain = lst_attrs[i]["c:Domain"]["o:Domain"]["@Ref"]
-                lst_attrs[i]["DomainID"] = id_domain
+                id_domain = attr["c:Domain"]["o:Domain"]["@Ref"]
+                attr["DomainID"] = id_domain
 
                 # Add matching domain data
                 keys_domain = {"Name", "Code", "DataType", "Lenght", "Precision"}
@@ -137,52 +114,87 @@ class ObjectTransformer:
                 attr_domain = {
                     k: attr_domain[k] for k in keys_domain if k in attr_domain
                 }
-                lst_attrs[i].update(attr_domain)
-                lst_attrs[i].pop("c:Domain")
-        return lst_attrs
+                attr.update(attr_domain)
+                attr.pop("c:Domain")
+            lst_attrs[i] = attr
+        entity["Attributes"] = lst_attrs
+        entity.pop("c:Attributes")
+        return entity
+
+    def __entity_internal_identifiers(self, entity: dict, dict_attrs: dict) -> dict:
+        # Set primary identifiers as an attribute of the identifiers
+        has_primary = "c:PrimaryIdentifier" in entity
+        if has_primary:
+            primary_id = entity["c:PrimaryIdentifier"]["o:Identifier"]["@Ref"]
+
+        # Reroute indentifiers
+        if "c:Identifiers" in entity:
+            identifiers = entity["c:Identifiers"]["o:Identifier"]
+            if isinstance(identifiers, dict):
+                identifiers = [identifiers]
+            identifiers = self.clean_keys(identifiers)
+            # Clean and transform indentifier data
+            for j in range(len(identifiers)):
+                lst_attr_id = identifiers[j]["c:Identifier.Attributes"][
+                    "o:EntityAttribute"
+                ]
+                if isinstance(lst_attr_id, dict):
+                    lst_attr_id = [lst_attr_id]
+                lst_attr_id = [dict_attrs[d["@Ref"]] for d in lst_attr_id]
+                identifiers[j]["Attributes"] = lst_attr_id
+                identifiers[j].pop("c:Identifier.Attributes")
+                # Set primary identifier attribute
+                if has_primary:
+                    identifiers[j]["IsPrimary"] = primary_id == identifiers[j]["Id"]
+            entity["Identifiers"] = identifiers
+            entity.pop("c:Identifiers")
+            entity.pop("c:PrimaryIdentifier")
+        return entity
 
     def entities_external(self, lst_entities: list) -> list:
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
-            if "c:SubShortcuts" in lst_entities[i]:
-                lst_attributes = lst_entities[i]["c:SubShortcuts"]["o:Shortcut"]
+            entity = lst_entities[i]
+            if "c:SubShortcuts" in entity:
+                lst_attributes = entity["c:SubShortcuts"]["o:Shortcut"]
                 lst_attributes = self.clean_keys(lst_attributes)
-                lst_entities[i]["Attributes"] = lst_attributes
-                lst_entities[i].pop("c:SubShortcuts")
+                entity["Attributes"] = lst_attributes
+                entity.pop("c:SubShortcuts")
+            lst_entities[i] = entity
         return lst_entities
 
     def mappings(
         self, lst_mappings: list, dict_entities: list, dict_attributes: list
     ) -> list:
         lst_mappings = self.clean_keys(lst_mappings)
-        i = 0
         for i in range(len(lst_mappings)):
+            mapping = lst_mappings[i]
             logger.debug(f"Starting mapping transform for '{lst_mappings[i]['Name']}'")
             # Target entity rerouting and enriching
             id_entity_target = lst_mappings[i]["c:Classifier"]["o:Entity"]["@Ref"]
-            lst_mappings[i]["EntityTarget"] = dict_entities[id_entity_target]
+            mapping["EntityTarget"] = dict_entities[id_entity_target]
             lst_mappings[i].pop("c:Classifier")
             # Source entities rerouting and enriching
             lst_source_entity = []
             for entity_type in ["o:Entity", "o:Shortcut"]:
-                if entity_type in lst_mappings[i]["c:SourceClassifiers"]:
-                    source_entity = lst_mappings[i]["c:SourceClassifiers"][entity_type]
+                if entity_type in mapping["c:SourceClassifiers"]:
+                    source_entity = mapping["c:SourceClassifiers"][entity_type]
                     if isinstance(source_entity, dict):
                         source_entity = [source_entity]
                     source_entity = [d["@Ref"] for d in source_entity]
                     lst_source_entity = lst_source_entity + source_entity
             lst_source_entity = [dict_entities[item] for item in lst_source_entity]
-            lst_mappings[i]["EntitiesSource"] = lst_source_entity
-            lst_mappings[i].pop("c:SourceClassifiers")
+            mapping["EntitiesSource"] = lst_source_entity
+            mapping.pop("c:SourceClassifiers")
             # Reroute datasource
             # TODO: Research role of DataSource
-            lst_mappings[i]["DataSourceID"] = lst_mappings[i]["c:DataSource"][
-                "o:DefaultDataSource"
-            ]["@Ref"]
-            lst_mappings[i].pop("c:DataSource")
+            mapping["DataSourceID"] = mapping["c:DataSource"]["o:DefaultDataSource"][
+                "@Ref"
+            ]
+            mapping.pop("c:DataSource")
 
             # Rerouting compositionObjects
-            lst_compositions = lst_mappings[i]["c:ExtendedCompositions"][
+            lst_compositions = mapping["c:ExtendedCompositions"][
                 "o:ExtendedComposition"
             ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
             lst_compositions = self.__mapping_compositions(
@@ -190,10 +202,9 @@ class ObjectTransformer:
                 dict_entities=dict_entities,
                 dict_attributes=dict_attributes,
             )
-
-            lst_mappings[i]["CompositionObject"] = lst_compositions
-            lst_mappings[i].pop("c:ExtendedCompositions")
-
+            mapping["CompositionObject"] = lst_compositions
+            mapping.pop("c:ExtendedCompositions")
+            lst_mappings[i] = mapping
         return lst_mappings
 
     def __mapping_compositions(
@@ -202,82 +213,42 @@ class ObjectTransformer:
         lst_compositions = self.clean_keys(lst_compositions)
         for i in range(len(lst_compositions)):
             # Determine composition clause (FROM/JOIN)
-            lst_compositions[i]["CompositionType"] = self.__mapping_extract_join_type(
-                lst_compositions[i]["ExtendedAttributesText"]
+            composition = lst_compositions[i]
+            composition["CompositionType"] = self.__composition_join_type(
+                composition["ExtendedAttributesText"]
             )
-            # Determine entity involved
-            collection = lst_compositions[i]["c:ExtendedCollections"][
-                "o:ExtendedCollection"
-            ]
-            collection = self.__composition_entities(dict_entities, collection)
-            lst_compositions[i]["Entities"] = collection
-            lst_compositions[i].pop("c:ExtendedCollections")
-
-            test_composition = lst_compositions[i]
-            # Join items (ON clause)
+            # Determine entities involved
+            composition = self.__composition_entity(
+                composition=composition, dict_entities=dict_entities
+            )
+            # Join conditions (ON clause)
             # TODO : Figure this shit out... Where is the join operator?
             # <a:ExtendedAttributesText>{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,63={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,2=&lt;&gt;
-            if "c:ExtendedCompositions" in lst_compositions[i]:
-                test = lst_compositions[i]["c:ExtendedCompositions"][
-                    "o:ExtendedComposition"
-                ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
-                lst_join_items = lst_compositions[i]["c:ExtendedCompositions"][
-                    "o:ExtendedComposition"
-                ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"][
-                    "c:ExtendedCollections"
-                ]["o:ExtendedCollection"]
-                lst_compositions[2]["c:ExtendedCompositions"]["o:ExtendedComposition"][
-                    "c:ExtendedComposition.Content"
-                ]["o:ExtendedSubObject"]
-                lst_join_items = self.__composition_join_items(
-                    lst_join_items=lst_join_items, dict_attributes=dict_attributes
+            if "c:ExtendedCompositions" in composition:
+                composition = self.__composition_join_conditions(
+                    composition=composition, dict_attributes=dict_attributes
                 )
-                lst_compositions[i]["JoinAttributes"] = lst_join_items
-                lst_compositions[i].pop("c:ExtendedCompositions")
 
+            lst_compositions[i] = composition
         return lst_compositions
 
-    def __composition_entities(self, collection: dict, dict_entities: dict) -> dict:
-        collection = self.clean_keys(collection)
-        if "c:Content" in collection:
+    def __composition_entity(self, composition: dict, dict_entities: dict) -> dict:
+        entity = composition["c:ExtendedCollections"]["o:ExtendedCollection"]
+        entity = self.clean_keys(entity)
+        if "c:Content" in entity:
             type_entity = [
                 value
                 for value in ["o:Entity", "o:Shortcut"]
-                if value in collection["c:Content"]
+                if value in entity["c:Content"]
             ][0]
-            id_entity = collection["c:Content"][type_entity]["@Ref"]
-            collection["Entity"] = dict_entities[id_entity]
-            collection.pop("c:Content")
-        return collection
+            id_entity = entity["c:Content"][type_entity]["@Ref"]
+            entity = dict_entities[id_entity]
+        composition['Entity'] = entity
+        composition["EntityAlias"] = entity["Id"]
+        composition.pop("c:ExtendedCollections")
+        return composition
 
-    def __composition_join_items(
-        self, lst_join_items: list, dict_attributes: dict
-    ) -> list:
-        lst_join_items = self.clean_keys(lst_join_items)
-        for j in range(len(lst_join_items)):
-            type_join_item = lst_join_items[j]["Name"]
-            if type_join_item == "mdde_ChildAttribute":
-                print("Child attribute")
-                id_attr = lst_join_items[j]["c:Content"]["o:EntityAttribute"]["@Ref"]
-                lst_join_items[j]["AttributeChild"] = dict_attributes[id_attr]
-                lst_join_items[j].pop("c:Content")
-            elif type_join_item == "mdde_ParentSourceObject":
-                # TODO: Link to from composition
-                print("Link to FROM")
-            elif type_join_item == "mdde_ParentAttribute":
-                type_entity = [
-                    value
-                    for value in ["o:Entity", "o:Shortcut"]
-                    if value in lst_join_items[j]["c:Content"]
-                ][0]
-                id_attr = lst_join_items[j]["c:Content"][type_entity]["@Ref"]
-                lst_join_items[j]["AttributeParent"] = dict_attributes[id_attr]
-                lst_join_items[j].pop("c:Content")
-            else:
-                logger.warning(f"Unhandled kind of join '{type_join_item}'")
-        return lst_join_items
-
-    def __mapping_extract_join_type(self, extended_attrs_text: str) -> str:
+    def __composition_join_type(self, extended_attrs_text: str) -> str:
         """Extracting the FROM or JOIN type clause from a very specific Power Designer attributes
 
         Args:
@@ -294,3 +265,35 @@ class ObjectTransformer:
         idx_start = join_type.find("=") + 1
         join_type = join_type[idx_start:].upper()
         return join_type
+
+    def __composition_join_conditions(
+        self, composition: dict, dict_attributes: dict
+    ) -> dict:
+        lst_conditions = composition["c:ExtendedCompositions"][
+                    "o:ExtendedComposition"
+                ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+        lst_conditions = self.clean_keys(lst_conditions)
+        for j in range(len(lst_conditions)):
+            type_join_item = lst_conditions[j]["Name"]
+            if type_join_item == "mdde_ChildAttribute":
+                print("Child attribute")
+                id_attr = lst_conditions[j]["c:Content"]["o:EntityAttribute"]["@Ref"]
+                lst_conditions[j]["AttributeChild"] = dict_attributes[id_attr]
+                lst_conditions[j].pop("c:Content")
+            elif type_join_item == "mdde_ParentSourceObject":
+                # TODO: Link to from composition
+                print("Link to FROM")
+            elif type_join_item == "mdde_ParentAttribute":
+                type_entity = [
+                    value
+                    for value in ["o:Entity", "o:Shortcut"]
+                    if value in lst_conditions[j]["c:Content"]
+                ][0]
+                id_attr = lst_conditions[j]["c:Content"][type_entity]["@Ref"]
+                lst_conditions[j]["AttributeParent"] = dict_attributes[id_attr]
+                lst_conditions[j].pop("c:Content")
+            else:
+                logger.warning(f"Unhandled kind of join '{type_join_item}'")
+        composition["JoinConditions"] = lst_conditions
+        composition.pop("c:ExtendedCompositions")
+        return composition
