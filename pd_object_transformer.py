@@ -222,8 +222,6 @@ class ObjectTransformer:
                 composition=composition, dict_entities=dict_entities
             )
             # Join conditions (ON clause)
-            # TODO : Figure this shit out... Where is the join operator?
-            # <a:ExtendedAttributesText>{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,63={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,2=&lt;&gt;
             if "c:ExtendedCompositions" in composition:
                 composition = self.__composition_join_conditions(
                     composition=composition, dict_attributes=dict_attributes
@@ -269,6 +267,8 @@ class ObjectTransformer:
     def __composition_join_conditions(
         self, composition: dict, dict_attributes: dict
     ) -> dict:
+        # TODO : Figure this shit out... Where is the join operator?
+        # <a:ExtendedAttributesText>{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,63={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,2=&lt;&gt;
         lst_conditions = composition["c:ExtendedCompositions"][
                     "o:ExtendedComposition"
                 ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
