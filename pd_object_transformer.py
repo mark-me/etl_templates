@@ -226,7 +226,6 @@ class ObjectTransformer:
                 composition = self.__composition_join_conditions(
                     composition=composition, dict_attributes=dict_attributes
                 )
-
             lst_compositions[i] = composition
         return lst_compositions
 
@@ -272,30 +271,39 @@ class ObjectTransformer:
         lst_conditions = composition["c:ExtendedCompositions"][
                     "o:ExtendedComposition"
                 ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+        if 'c:ExtendedCollections' in lst_conditions:
+            lst_conditions = lst_conditions['c:ExtendedCollections']['o:ExtendedCollection']
         lst_conditions = self.clean_keys(lst_conditions)
-        for j in range(len(lst_conditions)):
-            condition = lst_conditions[j]
-            type_join_item = condition["Name"]
-            if type_join_item == "mdde_ChildAttribute":
-                print("Child attribute")
-                id_attr = condition["c:Content"]["o:EntityAttribute"]["@Ref"]
-                condition["AttributeChild"] = dict_attributes[id_attr]
-                condition.pop("c:Content")
-            elif type_join_item == "mdde_ParentSourceObject":
-                # TODO: Link to from composition
-                print("Link to FROM")
-            elif type_join_item == "mdde_ParentAttribute":
-                type_entity = [
-                    value
-                    for value in ["o:Entity", "o:Shortcut"]
-                    if value in condition["c:Content"]
-                ][0]
-                id_attr = condition["c:Content"][type_entity]["@Ref"]
-                condition["AttributeParent"] = dict_attributes[id_attr]
-                condition.pop("c:Content")
-            else:
-                logger.warning(f"Unhandled kind of join '{type_join_item}'")
-            lst_conditions[j] = condition
-        composition["JoinConditions"] = lst_conditions
-        composition.pop("c:ExtendedCompositions")
+
+        print("me")
+        # for j in range(len(lst_conditions)):
+        #     condition = lst_conditions[j]
+        #     if 'ExtendedAttributesText' in condition:
+        #         # TODO: extract join condition operator
+        #         pass
+        #     else:
+        #         condition_operator = "="
+        #     type_join_item = condition["Name"]
+        #     if type_join_item == "mdde_ChildAttribute":
+        #         print("Child attribute")
+        #         id_attr = condition["c:Content"]["o:EntityAttribute"]["@Ref"]
+        #         condition["AttributeChild"] = dict_attributes[id_attr]
+        #         condition.pop("c:Content")
+        #     elif type_join_item == "mdde_ParentSourceObject":
+        #         # TODO: Link to from composition
+        #         print("Link to FROM")
+        #     elif type_join_item == "mdde_ParentAttribute":
+        #         type_entity = [
+        #             value
+        #             for value in ["o:Entity", "o:Shortcut"]
+        #             if value in condition["c:Content"]
+        #         ][0]
+        #         id_attr = condition["c:Content"][type_entity]["@Ref"]
+        #         condition["AttributeParent"] = dict_attributes[id_attr]
+        #         condition.pop("c:Content")
+        #     else:
+        #         logger.warning(f"Unhandled kind of join '{type_join_item}'")
+        #     lst_conditions[j] = condition
+        # composition["JoinConditions"] = lst_conditions
+        # composition.pop("c:ExtendedCompositions")
         return composition
