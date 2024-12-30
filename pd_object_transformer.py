@@ -8,10 +8,20 @@ logger = logging.getLogger(__name__)
 
 
 class ObjectTransformer:
+    """Collection of functions that transform structures and data on Power Designer objects
+    """
     def __init__(self):
         self.timestamp_fields = ["a:CreationDate", "a:ModificationDate"]
 
     def clean_keys(self, content: Union[dict, list]):
+        """Renames keys of Power Designer objects (i.e. dictionaries) so the '@' and 'a:' prefixes are removed
+
+        Args:
+            content (Union[dict, list]): A dict or list of dicts with Power Designer objects
+
+        Returns:
+            _type_: List or dict with renamed keys (depending on what type was passed as a parameter)
+        """
         if isinstance(content, dict):
             lst_object = [content]
         else:
@@ -32,11 +42,11 @@ class ObjectTransformer:
         return result
 
     def convert_values_datetime(self, d: dict, convert_key: str) -> dict:
-        """Remove keys from a nested dictionary, also from the dictionaries within lists (Currently not used)
+        """Converts a dictionary value containing a Unix timestamp to a datetime object
 
         Args:
-            d (dict): Dictionary that needs cleaning
-            remove_key (str): The name of the keys that needs to be removed
+            d (dict): Dictionary contains the timestamp value
+            remove_key (str): The name of the keys that contains the timestamp value
 
         Returns:
             dict: The dictionary without the keys
@@ -106,7 +116,6 @@ class ObjectTransformer:
                 lst_entities[i]["Identifiers"] = identifiers
                 lst_entities[i].pop("c:Identifiers")
                 lst_entities[i].pop("c:PrimaryIdentifier")
-
                 lst_entities[i] = self.clean_keys(lst_entities[i])
                 # Reroute default mapping
                 # TODO: research role DefaultMapping
