@@ -170,10 +170,13 @@ class ObjectTransformer:
         for i in range(len(lst_mappings)):
             mapping = lst_mappings[i]
             logger.debug(f"Starting mapping transform for '{mapping['Name']}'")
+
             # Target entity rerouting and enriching
             id_entity_target = mapping["c:Classifier"]["o:Entity"]["@Ref"]
             mapping["EntityTarget"] = dict_entities[id_entity_target]
+            logger.debug(f"Mapping target entity: '{mapping["EntityTarget"]['Name']}'")
             mapping.pop("c:Classifier")
+
             # Source entities rerouting and enriching
             mapping = self.__mapping_entities_source(
                 mapping=mapping, dict_entities=dict_entities
@@ -185,9 +188,9 @@ class ObjectTransformer:
             ]
             mapping.pop("c:DataSource")
 
-            # Rerouting and restructuring compositionObjects
+            # Rerouting, restructuring and enriching compositionObjects
             mapping = self.__mapping_compositions(
-                dict_mappint=mapping,
+                mapping=mapping,
                 dict_entities=dict_entities,
                 dict_attributes=dict_attributes,
             )
@@ -196,6 +199,7 @@ class ObjectTransformer:
         return lst_mappings
 
     def __mapping_entities_source(self, mapping: dict, dict_entities: dict) -> dict:
+        logger.debug(f"Starting sources entities transform for mapping '{mapping['Name']}'")
         lst_source_entity = []
         for entity_type in ["o:Entity", "o:Shortcut"]:
             if entity_type in mapping["c:SourceClassifiers"]:
@@ -212,6 +216,7 @@ class ObjectTransformer:
     def __mapping_compositions(
         self, mapping: dict, dict_entities: dict, dict_attributes: dict
     ) -> list:
+        logger.debug(f"Starting compositions transform for mapping '{mapping['Name']}'")
         lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"][
             "c:ExtendedComposition.Content"
         ]["o:ExtendedSubObject"]
@@ -237,6 +242,7 @@ class ObjectTransformer:
         return mapping
 
     def __composition_entity(self, composition: dict, dict_entities: dict) -> dict:
+        logger.debug(f"Starting entity transform for composition '{composition['Name']}'")
         entity = composition["c:ExtendedCollections"]["o:ExtendedCollection"]
         entity = self.clean_keys(entity)
         if "c:Content" in entity:
@@ -247,6 +253,7 @@ class ObjectTransformer:
             ][0]
             id_entity = entity["c:Content"][type_entity]["@Ref"]
             entity = dict_entities[id_entity]
+            logger.debug(f"Composition entity '{entity['Name']}'")
         composition["Entity"] = entity
         composition["EntityAlias"] = entity["Id"]
         composition.pop("c:ExtendedCollections")
@@ -273,8 +280,7 @@ class ObjectTransformer:
     def __composition_join_conditions(
         self, composition: dict, dict_attributes: dict
     ) -> dict:
-        # TODO : Figure this shit out... Where is the join operator?
-        # <a:ExtendedAttributesText>{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,63={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,2=&lt;&gt;
+        logger.debug(f"Starting join conditions transform for composition '{composition['Name']}'")
         lst_conditions = composition["c:ExtendedCompositions"]["o:ExtendedComposition"][
             "c:ExtendedComposition.Content"
         ]["o:ExtendedSubObject"]
@@ -296,7 +302,6 @@ class ObjectTransformer:
             if type_join_item == "mdde_ChildAttribute":
                 # Child attribute
                 # TODO: implement alias to child entity
-                print("Child attribute")
                 id_attr = condition["c:Content"]["o:EntityAttribute"]["@Ref"]
                 condition["AttributeChild"] = dict_attributes[id_attr]
                 condition.pop("c:Content")
@@ -320,6 +325,7 @@ class ObjectTransformer:
                 logger.warning(
                     f"Unhandled kind of join item in condition '{type_join_item}'"
                 )
+                # TODO: Handling intermediate entities (Business Rules)
             lst_conditions[j] = condition
         composition["JoinConditions"] = lst_conditions
         composition.pop("c:ExtendedCompositions")
