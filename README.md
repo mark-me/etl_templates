@@ -34,6 +34,7 @@ The current code is based on my own sample data structure, but we want to move t
 
 ## Future developments
 
+* Align way of designing in PowerDesigner and ETL extraction for this script
 * Create templates and procedures for testing on model constraints:
   * Entity identifier
   * Relationships
