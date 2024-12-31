@@ -23,7 +23,7 @@ Logs are written as JSON in the terminal and to log.json. The logging configurat
 
 ### Sample XML conversion
 
-The current code is based on my own sample data structure, but we want to move to PowerDesigner generated model data. As a starting point the [example model](https://generate.x-breeze.com/docs/3.1/Examples/) documents from [CrossBreeze](https://crossbreeze.nl/) are added to the repository (``input/ExampleSource.ldm```, ```input/Reference.ldm``` and ```input/ExampleDWH.ldb```). The script ```pd_document.py``` is the entry point for extracting data into objects.
+The current code is based on my own sample data structure, but we want to move to PowerDesigner generated model data. As a starting point the [example model](https://generate.x-breeze.com/docs/3.1/Examples/) documents from [CrossBreeze](https://crossbreeze.nl/) are added to the repository (```input/ExampleSource.ldm```, ```input/Reference.ldm``` and ```input/ExampleDWH.ldb```). The script ```pd_document.py``` is the entry point for extracting data into objects.
 
 [xmltodict](https://pypi.org/project/xmltodict/) is used to convert XML into Python [dictionaries](https://realpython.com/python-dicts/), which in turn can be written to a JSON file.
 
