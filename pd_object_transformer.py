@@ -135,17 +135,22 @@ class ObjectTransformer:
             identifiers = self.clean_keys(identifiers)
             # Clean and transform indentifier data
             for j in range(len(identifiers)):
-                lst_attr_id = identifiers[j]["c:Identifier.Attributes"][
-                    "o:EntityAttribute"
-                ]
-                if isinstance(lst_attr_id, dict):
-                    lst_attr_id = [lst_attr_id]
-                lst_attr_id = [dict_attrs[d["@Ref"]] for d in lst_attr_id]
-                identifiers[j]["Attributes"] = lst_attr_id
-                identifiers[j].pop("c:Identifier.Attributes")
+                identifier = identifiers[j]
+                if "c:Identifier.Attributes" not in identifier:
+                    logger.error(f"No attributes included in the identifier '{identifier["Name"]}'")
+                else:
+                    lst_attr_id = identifier["c:Identifier.Attributes"][
+                        "o:EntityAttribute"
+                    ]
+                    if isinstance(lst_attr_id, dict):
+                        lst_attr_id = [lst_attr_id]
+                    lst_attr_id = [dict_attrs[d["@Ref"]] for d in lst_attr_id]
+                    identifier["Attributes"] = lst_attr_id
+                    identifier.pop("c:Identifier.Attributes")
                 # Set primary identifier attribute
                 if has_primary:
-                    identifiers[j]["IsPrimary"] = primary_id == identifiers[j]["Id"]
+                    identifier["IsPrimary"] = primary_id == identifier["Id"]
+                identifiers[j] = identifier
             entity["Identifiers"] = identifiers
             entity.pop("c:Identifiers")
             entity.pop("c:PrimaryIdentifier")
