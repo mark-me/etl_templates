@@ -169,23 +169,15 @@ class ObjectTransformer:
         lst_mappings = self.clean_keys(lst_mappings)
         for i in range(len(lst_mappings)):
             mapping = lst_mappings[i]
-            logger.debug(f"Starting mapping transform for '{lst_mappings[i]['Name']}'")
+            logger.debug(f"Starting mapping transform for '{mapping['Name']}'")
             # Target entity rerouting and enriching
-            id_entity_target = lst_mappings[i]["c:Classifier"]["o:Entity"]["@Ref"]
+            id_entity_target = mapping["c:Classifier"]["o:Entity"]["@Ref"]
             mapping["EntityTarget"] = dict_entities[id_entity_target]
-            lst_mappings[i].pop("c:Classifier")
+            mapping.pop("c:Classifier")
             # Source entities rerouting and enriching
-            lst_source_entity = []
-            for entity_type in ["o:Entity", "o:Shortcut"]:
-                if entity_type in mapping["c:SourceClassifiers"]:
-                    source_entity = mapping["c:SourceClassifiers"][entity_type]
-                    if isinstance(source_entity, dict):
-                        source_entity = [source_entity]
-                    source_entity = [d["@Ref"] for d in source_entity]
-                    lst_source_entity = lst_source_entity + source_entity
-            lst_source_entity = [dict_entities[item] for item in lst_source_entity]
-            mapping["EntitiesSource"] = lst_source_entity
-            mapping.pop("c:SourceClassifiers")
+            mapping = self.__mapping_entities_source(
+                mapping=mapping, dict_entities=dict_entities
+            )
             # Reroute datasource
             # TODO: Research role of DataSource
             mapping["DataSourceID"] = mapping["c:DataSource"]["o:DefaultDataSource"][
@@ -193,23 +185,36 @@ class ObjectTransformer:
             ]
             mapping.pop("c:DataSource")
 
-            # Rerouting compositionObjects
-            lst_compositions = mapping["c:ExtendedCompositions"][
-                "o:ExtendedComposition"
-            ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
-            lst_compositions = self.__mapping_compositions(
-                lst_compositions=lst_compositions,
+            # Rerouting and restructuring compositionObjects
+            mapping = self.__mapping_compositions(
+                dict_mappint=mapping,
                 dict_entities=dict_entities,
                 dict_attributes=dict_attributes,
             )
-            mapping["CompositionObject"] = lst_compositions
-            mapping.pop("c:ExtendedCompositions")
+
             lst_mappings[i] = mapping
         return lst_mappings
 
+    def __mapping_entities_source(self, mapping: dict, dict_entities: dict) -> dict:
+        lst_source_entity = []
+        for entity_type in ["o:Entity", "o:Shortcut"]:
+            if entity_type in mapping["c:SourceClassifiers"]:
+                source_entity = mapping["c:SourceClassifiers"][entity_type]
+                if isinstance(source_entity, dict):
+                    source_entity = [source_entity]
+                source_entity = [d["@Ref"] for d in source_entity]
+                lst_source_entity = lst_source_entity + source_entity
+        lst_source_entity = [dict_entities[item] for item in lst_source_entity]
+        mapping["EntitiesSource"] = lst_source_entity
+        mapping.pop("c:SourceClassifiers")
+        return mapping
+
     def __mapping_compositions(
-        self, lst_compositions: list, dict_entities: dict, dict_attributes: dict
+        self, mapping: dict, dict_entities: dict, dict_attributes: dict
     ) -> list:
+        lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"][
+            "c:ExtendedComposition.Content"
+        ]["o:ExtendedSubObject"]
         lst_compositions = self.clean_keys(lst_compositions)
         for i in range(len(lst_compositions)):
             # Determine composition clause (FROM/JOIN)
@@ -227,7 +232,9 @@ class ObjectTransformer:
                     composition=composition, dict_attributes=dict_attributes
                 )
             lst_compositions[i] = composition
-        return lst_compositions
+        mapping["CompositionObject"] = lst_compositions
+        mapping.pop("c:ExtendedCompositions")
+        return mapping
 
     def __composition_entity(self, composition: dict, dict_entities: dict) -> dict:
         entity = composition["c:ExtendedCollections"]["o:ExtendedCollection"]
@@ -295,7 +302,9 @@ class ObjectTransformer:
                 condition.pop("c:Content")
             elif type_join_item == "mdde_ParentSourceObject":
                 # Alias to point to a composition entity
-                condition["ParentAlias"] = condition['c:Content']['o:ExtendedSubObject']['@Ref']
+                condition["ParentAlias"] = condition["c:Content"][
+                    "o:ExtendedSubObject"
+                ]["@Ref"]
                 condition.pop("c:Content")
             elif type_join_item == "mdde_ParentAttribute":
                 # Parent attribute
@@ -308,7 +317,9 @@ class ObjectTransformer:
                 condition["AttributeParent"] = dict_attributes[id_attr]
                 condition.pop("c:Content")
             else:
-                logger.warning(f"Unhandled kind of join item in condition '{type_join_item}'")
+                logger.warning(
+                    f"Unhandled kind of join item in condition '{type_join_item}'"
+                )
             lst_conditions[j] = condition
         composition["JoinConditions"] = lst_conditions
         composition.pop("c:ExtendedCompositions")
@@ -328,7 +339,7 @@ class ObjectTransformer:
         idx_start = extended_attrs_text.find(str_proceeder) + len(str_proceeder)
         idx_end = extended_attrs_text.find("\n", idx_start)
         idx_end = idx_end if idx_end > -1 else len(extended_attrs_text) + 1
-        join_type = extended_attrs_text[idx_start:idx_end]
-        idx_start = join_type.find("=") + 1
-        join_type = join_type[idx_start:].upper()
-        return join_type
+        join_condition = extended_attrs_text[idx_start:idx_end]
+        idx_start = join_condition.find("=") + 1
+        join_condition = join_condition[idx_start:].upper()
+        return join_condition
