@@ -312,17 +312,22 @@ class ObjectTransformer:
             condition = [condition]
 
         if len(condition) == 1:
-            #"{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,130={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,1=>\n{E9D50277-1E36-464C-9842-5008646943AB},mdde_ParentLiteralValue,1=0"
+            #"{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,130={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,1=>\n{E9D50277-1E36-464C-9842-5008646943AB},1=0"
             Somethi
         else:
             for j in range(len(lst_conditions)):
                 condition = lst_conditions[j]
                 lst_conditions = self.clean_keys(condition)
                 condition_operator = "="
+                parent_literal = None
                 if "ExtendedAttributesText" in condition:
                     condition_operator = self.__extract_value_from_attribute_text(
                         condition["ExtendedAttributesText"], preceded_by="mdde_JoinOperator,"
                     )
+                    parent_literal = self.__extract_value_from_attribute_text(
+                        condition["ExtendedAttributesText"], preceded_by="mdde_ParentLiteralValue,"
+                    )
+
                 condition["Operator"] = condition_operator
                 type_join_item = condition["Name"]
                 if type_join_item == "mdde_ChildAttribute":
