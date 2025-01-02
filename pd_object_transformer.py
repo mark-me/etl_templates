@@ -157,6 +157,71 @@ class ObjectTransformer:
             entity.pop("c:PrimaryIdentifier")
         return entity
 
+    def relationships(self, lst_relationships: list, lst_entity: dict) -> list:
+        lst_relationships = self.clean_keys(lst_relationships)
+        if isinstance(lst_relationships, dict):
+            lst_relationships = [lst_relationships]
+
+        dict_entities = {entity["Id"]: entity for entity in lst_entity}
+
+        for rlship in lst_relationships:
+            # Filter entity and attribute data relevant to rlship
+            lst_entity_id = [
+                rlship[obj]["o:Entity"]["@Ref"]
+                for obj in ["c:Object1", "c:Object2"]
+            ]
+            dict_rlship_entities = {
+                dict_entities[id]["Id"]: dict_entities[id] for id in lst_entity_id
+            }
+            dict_rlship_attributes = {}
+            for rlship_entity in dict_rlship_entities:
+                for attr in dict_rlship_entities[rlship_entity]['Attributes']:
+                    dict_rlship_attributes[attr["Id"]] = attr
+
+            for object in [
+                {"old": "c:Object1", "new": "Entity1"},
+                {"old": "c:Object2", "new": "Entity2"},
+            ]:
+                id_entity = rlship[object["old"]]["o:Entity"]["@Ref"]
+                rlship[object["new"]] = rlship_entity[id_entity]
+                rlship.pop(object["old"])
+
+            # Indentifier
+            lst_id_indentifier = rlship["c:ParentIdentifier"]["o:Identifier"]
+            if isinstance(lst_id_indentifier, dict):
+                lst_id_indentifier = [lst_id_indentifier]
+            lst_identifier = []
+            for entity in lst_entity:
+                lst_identifier = lst_identifier + [
+                    id for id in entity["Identifiers"] if id["Id"] in lst_id_indentifier
+                ]
+
+        lst_joins = rlship["c:Joins"]["o:RelationshipJoin"]
+        if isinstance(lst_joins, dict):
+            lst_joins = [lst_joins]
+            lst_id_attribute = rlship["c:Joins"]["o:RelationshipJoin"][
+                object["old"]
+            ]["o:EntityAttribute"]
+            if isinstance(lst_id_attribute, dict):
+                lst_id_attribute = [lst_id_attribute]
+            lst_id_attribute = [d["@Ref"] for d in lst_id_attribute]
+            lst_attribute = [
+                attr for attr in entity["Attributes"] if attr["Id"] in lst_id_attribute
+            ]
+
+            rlship[object["new"]] = {
+                "Id": rlship[object["old"]]["o:Entity"]["@Ref"],
+                "Attributes": lst_id_attribute,
+            }
+            rlship.pop(object["old"])
+            # TODO: Clean parentidentifier
+
+            rlship.pop("c:Joins")
+
+            # Add to final result
+            lst_relationships.append(rlship)
+        return lst_relationships
+
     def entities_external(self, lst_entities: list) -> list:
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):

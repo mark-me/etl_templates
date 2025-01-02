@@ -41,7 +41,7 @@ class ObjectExtractor:
         model = self.transformer.clean_keys(model)
         model["IsDocumentModel"] = True
         model["Entities"] = lst_entity
-        model["Relationships"] = self.__relationships()
+        model["Relationships"] = self.__relationships(lst_entity=lst_entity)
         return model
 
     def __entities_internal(self) -> list:
@@ -141,35 +141,13 @@ class ObjectExtractor:
             dict_domains[domain["Id"]] = domain
         return dict_domains
 
-    def __relationships(self) -> list:
+    def __relationships(self, lst_entity: list) -> list:
         lst_relationships = []
         lst_pd_relationships = self.content["c:Relationships"]["o:Relationship"]
-        if isinstance(lst_pd_relationships, dict):
-            lst_pd_relationships = [lst_pd_relationships]
-        for relationship in lst_pd_relationships:
-            # Simplify structure
-            for object in [
-                {"old": "c:Object1", "new": "Object1"},
-                {"old": "c:Object2", "new": "Object2"},
-            ]:
-                relationship[object["new"]] = {}
-                attributes = relationship["c:Joins"]["o:RelationshipJoin"][
-                    object["old"]
-                ]["o:EntityAttribute"]
-                if isinstance(attributes, dict):
-                    attributes = [attributes]
-                attributes = [d["@Ref"] for d in attributes]
-                relationship[object["new"]] = {
-                    "Id": relationship[object["old"]]["o:Entity"]["@Ref"],
-                    "Attributes": attributes,
-                }
-                relationship.pop(object["old"])
-                # TODO: Clean parentidentifier
-
-            relationship.pop("c:Joins")
-
-            # Add to final result
-            lst_relationships.append(relationship)
+        lst_relationships = self.transformer.relationships(
+            lst_relationships=lst_pd_relationships,
+            lst_entity=lst_entity
+        )
         return lst_relationships
 
     def mappings(self, dict_entities: list, dict_attributes: list) -> list:
