@@ -265,6 +265,13 @@ class ObjectTransformer:
     def mappings(
         self, lst_mappings: list, dict_entities: dict, dict_attributes: dict
     ) -> list:
+        lst_ignored_mapping = [
+                "Mapping Br Custom Business Rule Example",
+                "Mapping AggrTotalSalesPerCustomer",
+                "Mapping Pivot Orders Per Country Per Date",
+            ] # TODO: Ignored mappings for 1st version
+        lst_mappings = [m for m in lst_mappings if m["a:Name"] not in lst_ignored_mapping]
+
         lst_mappings = self.clean_keys(lst_mappings)
         for i in range(len(lst_mappings)):
             mapping = lst_mappings[i]
@@ -288,17 +295,11 @@ class ObjectTransformer:
             mapping.pop("c:DataSource")
 
             # Rerouting, restructuring and enriching compositionObjects
-            if mapping["Name"] not in [
-                "Mapping Br Custom Business Rule Example",
-                "Mapping AggrTotalSalesPerCustomer",
-                "Mapping Pivot Orders Per Country Per Date",
-            ]:
-                # TODO: Ignored mappings for 1st version
-                mapping = self.__mapping_compositions(
-                    mapping=mapping,
-                    dict_entities=dict_entities,
-                    dict_attributes=dict_attributes,
-                )
+            mapping = self.__mapping_compositions(
+                mapping=mapping,
+                dict_entities=dict_entities,
+                dict_attributes=dict_attributes,
+            )
             # Mapping attributes
             mapping = self.__mapping_attributes(
                 mapping=mapping, dict_attributes=dict_attributes
@@ -340,6 +341,7 @@ class ObjectTransformer:
 
                 lst_attr_maps[i] = attr_map
             mapping["AttributeMapping"] = lst_attr_maps
+            mapping.pop("c:StructuralFeatureMaps")
         return mapping
 
     def __mapping_entities_source(self, mapping: dict, dict_entities: dict) -> dict:
@@ -445,6 +447,7 @@ class ObjectTransformer:
             condition["JoinConditionComponents"] = self.__join_condition_components(
                 lst_components=lst_components, dict_attributes=dict_attributes
             )
+            condition.pop("c:ExtendedCollections")
             lst_conditions[i] = condition
 
         composition["JoinConditions"] = lst_conditions
