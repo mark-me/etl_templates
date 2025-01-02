@@ -7,12 +7,11 @@ from jinja2 import Environment, FileSystemLoader
 import yaml
 
 import logging_config
-from pd_document import PDDocument
 
 logger = logging.getLogger(__name__)
 
 
-def main(file_pd_ldm: str, type_template: str):
+def main(type_template: str, models_input: str):
     """Creates the DDL's
 
     Args:
@@ -20,7 +19,6 @@ def main(file_pd_ldm: str, type_template: str):
         models_input (str): The file that describes the models
     """
     logger.info(f"Writing implementation for {type_template}")
-    # Template directory
     dir_template = "templates/" + type_template + "/"
     # Directories for output
     dir_output = "output/" + type_template + "/"
@@ -36,14 +34,13 @@ def main(file_pd_ldm: str, type_template: str):
         "table": environment.get_template("create_table.sql"),
     }
 
-    pd_document = PDDocument(file_pd_ldm=file_pd_ldm)
-    pd_document.get_MDDE_attribute()
-    # TODO: Generation
-        # Model - DDL Generation
-            # Table
-            # DDL's
-            # Create schema DDL
-"""         for schema in models["schemas"]:
+    # Load model data
+    with open(models_input) as json_file:
+        models = json.load(json_file)
+    logger.info(f"Read models from {models_input}")
+
+    # Generation
+    for schema in models["schemas"]:
         # Create schema DDL
         content = dict_templates["schema"].render(schema=schema)
         file_output = dir_output + schema["name"] + ".sql"
@@ -60,15 +57,14 @@ def main(file_pd_ldm: str, type_template: str):
             with open(file_output, mode="w", encoding="utf-8") as file_ddl:
                 file_ddl.write(content)
             logger.info(f"Written Table DDL {file_output}")
-"""
-        # ETL
-            # Updating mapping load
-            # Creating stored procedures
 
+        # Creating view DDL's
+        # Updating mapping load
+        # Creating stored procedures
 
 
 if __name__ == "__main__":
     with open("config.yml", "r") as file:
         config = yaml.safe_load(file)
-    main(file_pd_ldm=config["models_input"], type_template=config["templates"])
+    main(type_template=config["templates"], models_input=config["models_input"])
     pydoc.writedoc("main")
