@@ -34,6 +34,7 @@ class PDDocument:
         self.lst_mappings = extractor.mappings(
             dict_entities=dict_entities, dict_attributes=dict_attributes
         )
+        Query = PDDocumentQuery(models=self.lst_models, mappings=self.lst_mappings)
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
@@ -106,17 +107,33 @@ class PDDocument:
 
     def write_result(self, file_output: str):
         dict_document = {}
-        dict_document['Models'] = self.lst_models
+        dict_document["Models"] = self.lst_models
         dict_document["Mappings"] = self.lst_mappings
         path = Path(file_output)
         Path(path.parent).mkdir(parents=True, exist_ok=True)
         with open(file_output, "w") as outfile:
-            json.dump(dict_document, outfile, indent=4, default=self.__serialize_datetime)
+            json.dump(
+                dict_document, outfile, indent=4, default=self.__serialize_datetime
+            )
         logger.debug(f"Document output is written to '{file_output}'")
 
+
 class PDDocumentQuery:
-    def __init__(self):
-        pass
+    def __init__(self, document: PDDocument):
+        self.lst_models = document.lst_models
+        self.lst_mappings = document.lst_mappings
+
+    def get_entities(self, name_model: str = None):
+        lst_results = []
+        if name_model is None:
+            lst_results = [model["Entities"] for model in self.lst_models]
+        else:
+            lst_results = [
+                model["Entities"]
+                for model in self.lst_models
+                if model["Name"] == name_model
+            ]
+        return lst_results
 
     def get_MDDE_model(self) -> list:
         lst_result = []
@@ -177,6 +194,7 @@ if __name__ == "__main__":
     document = PDDocument(file_pd_ldm=file_model)
     # Saving model objects
     document.write_result(file_output=file_document_output)
+    document.Query
     # lst_models = document.get_MDDE_model()
     # lst_entities = document.get_MDDE_entity()
     # lst_attributes = document.get_MDDE_attribute()
