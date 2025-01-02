@@ -325,7 +325,7 @@ class ObjectTransformer:
                 attr_map["AttributeTarget"] = dict_attributes[id_attr]
                 attr_map.pop("c:BaseStructuralFeatureMapping.Feature")
                 # Source feature's entity alias
-                attr_map["EntitySourceAlias"] = attr_map["c:ExtendedCollections"][
+                attr_map["CompositionEntityAlias"] = attr_map["c:ExtendedCollections"][
                     "o:ExtendedCollection"
                 ]["c:Content"]["o:ExtendedSubObject"]["@Ref"]
                 attr_map.pop("c:ExtendedCollections")
