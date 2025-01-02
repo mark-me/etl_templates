@@ -152,7 +152,7 @@ class ObjectExtractor:
 
     def mappings(self, dict_entities: list, dict_attributes: list) -> list:
         lst_mappings = self.content["c:Mappings"]["o:DefaultObjectMapping"]
-        self.transformer.mappings(
+        lst_mappings = self.transformer.mappings(
             lst_mappings=lst_mappings,
             dict_entities=dict_entities,
             dict_attributes=dict_attributes,

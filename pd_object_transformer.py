@@ -238,7 +238,9 @@ class ObjectTransformer:
         relationship.pop("c:Joins")
         return relationship
 
-    def __relationship_identifiers(self, relationship: dict, dict_identifiers: dict) -> dict:
+    def __relationship_identifiers(
+        self, relationship: dict, dict_identifiers: dict
+    ) -> dict:
         lst_indentifier_id = relationship["c:ParentIdentifier"]["o:Identifier"]
         if isinstance(lst_indentifier_id, dict):
             lst_indentifier_id = [lst_indentifier_id]
@@ -261,7 +263,7 @@ class ObjectTransformer:
         return lst_entities
 
     def mappings(
-        self, lst_mappings: list, dict_entities: list, dict_attributes: list
+        self, lst_mappings: list, dict_entities: dict, dict_attributes: dict
     ) -> list:
         lst_mappings = self.clean_keys(lst_mappings)
         for i in range(len(lst_mappings)):
@@ -291,15 +293,54 @@ class ObjectTransformer:
                 "Mapping AggrTotalSalesPerCustomer",
                 "Mapping Pivot Orders Per Country Per Date",
             ]:
-                # TODO: Ignore mappings for 1st version
+                # TODO: Ignored mappings for 1st version
                 mapping = self.__mapping_compositions(
                     mapping=mapping,
                     dict_entities=dict_entities,
                     dict_attributes=dict_attributes,
                 )
+            # Mapping attributes
+            mapping = self.__mapping_attributes(
+                mapping=mapping, dict_attributes=dict_attributes
+            )
 
             lst_mappings[i] = mapping
         return lst_mappings
+
+    def __mapping_attributes(self, mapping: dict, dict_attributes: dict) -> dict:
+        if "c:StructuralFeatureMaps" in mapping:
+            lst_attr_maps = mapping["c:StructuralFeatureMaps"][
+                "o:DefaultStructuralFeatureMapping"
+            ]
+            if isinstance(lst_attr_maps, dict):
+                lst_attr_maps = [lst_attr_maps]
+            lst_attr_maps = self.clean_keys(lst_attr_maps)
+            for i in range(len(lst_attr_maps)):
+                attr_map = lst_attr_maps[i]
+                # Target feature
+                id_attr = attr_map["c:BaseStructuralFeatureMapping.Feature"][
+                    "o:EntityAttribute"
+                ]["@Ref"]
+                attr_map["AttributeTarget"] = dict_attributes[id_attr]
+                attr_map.pop("c:BaseStructuralFeatureMapping.Feature")
+                # Source feature's entity alias
+                attr_map["EntitySourceAlias"] = attr_map["c:ExtendedCollections"][
+                    "o:ExtendedCollection"
+                ]["c:Content"]["o:ExtendedSubObject"]["@Ref"]
+                attr_map.pop("c:ExtendedCollections")
+                # Source attribute
+                type_entity = [
+                    value
+                    for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
+                    if value in attr_map["c:SourceFeatures"]
+                ][0]
+                id_attr = attr_map["c:SourceFeatures"][type_entity]["@Ref"]
+                attr_map["AttributesSource"] = dict_attributes[id_attr]
+                attr_map.pop("c:SourceFeatures")
+
+                lst_attr_maps[i] = attr_map
+            mapping["AttributeMapping"] = lst_attr_maps
+        return mapping
 
     def __mapping_entities_source(self, mapping: dict, dict_entities: dict) -> dict:
         logger.debug(
@@ -342,7 +383,7 @@ class ObjectTransformer:
                     composition=composition, dict_attributes=dict_attributes
                 )
             lst_compositions[i] = composition
-        mapping["CompositionObject"] = lst_compositions
+        mapping["Compositions"] = lst_compositions
         mapping.pop("c:ExtendedCompositions")
         return mapping
 
