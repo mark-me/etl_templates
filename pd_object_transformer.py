@@ -195,11 +195,17 @@ class ObjectTransformer:
             mapping.pop("c:DataSource")
 
             # Rerouting, restructuring and enriching compositionObjects
-            mapping = self.__mapping_compositions(
-                mapping=mapping,
-                dict_entities=dict_entities,
-                dict_attributes=dict_attributes,
-            )
+            if mapping["Name"] not in [
+                "Mapping Br Custom Business Rule Example",
+                "Mapping AggrTotalSalesPerCustomer",
+                "Mapping Pivot Orders Per Country Per Date",
+            ]:
+                # TODO: Ignore mappings for 1st version
+                mapping = self.__mapping_compositions(
+                    mapping=mapping,
+                    dict_entities=dict_entities,
+                    dict_attributes=dict_attributes,
+                )
 
             lst_mappings[i] = mapping
         return lst_mappings
@@ -233,7 +239,7 @@ class ObjectTransformer:
             # Determine composition clause (FROM/JOIN)
             composition = lst_compositions[i]
             composition["CompositionType"] = self.__extract_value_from_attribute_text(
-                composition["ExtendedAttributesText"], str_proceeder="mdde_JoinType,"
+                composition["ExtendedAttributesText"], preceded_by="mdde_JoinType,"
             )
             # Determine entities involved
             composition = self.__composition_entity(
@@ -265,7 +271,7 @@ class ObjectTransformer:
             entity = dict_entities[id_entity]
             logger.debug(f"Composition entity '{entity['Name']}'")
         composition["Entity"] = entity
-        composition["EntityAlias"] = entity["Id"]
+        composition["EntityAlias"] = composition["Id"]
         composition.pop("c:ExtendedCollections")
         return composition
 
@@ -273,90 +279,80 @@ class ObjectTransformer:
         self, composition: dict, dict_attributes: dict
     ) -> dict:
         logger.debug(
-            f"Starting join conditions transform for composition '{composition['Name']}'"
+            f"Join conditions transform for composition '{composition['Name']}'"
         )
-        content_conditions = composition["c:ExtendedCompositions"][
-            "o:ExtendedComposition"
-        ]["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+        lst_conditions = composition["c:ExtendedCompositions"]["o:ExtendedComposition"][
+            "c:ExtendedComposition.Content"
+        ]["o:ExtendedSubObject"]
+        if isinstance(lst_conditions, dict):
+            lst_conditions = [lst_conditions]
+        lst_conditions = self.clean_keys(lst_conditions)
 
-        # For one or multiple conditions
-        lst_conditions = []
-        if "c:ExtendedCollections" in content_conditions:
-            lst_conditions = [
-                content_conditions["c:ExtendedCollections"]["o:ExtendedCollection"]
-            ]
-        else:
-            for condition in content_conditions:
-                condition_new = condition["c:ExtendedCollections"][
-                    "o:ExtendedCollection"
-                ]
-                if "a:ExtendedAttributesText" in condition:
-                    condition_new["ExtendedAttributesText"] = condition[
-                        "a:ExtendedAttributesText"
-                    ]
-                lst_conditions.append(condition_new)
-
-        # Restructure each of the conditions
         for i in range(len(lst_conditions)):
-            lst_conditions[i] = self.__join_condition_components(
-                lst_conditions[i], dict_attributes=dict_attributes
+            condition = lst_conditions[i]
+            logger.debug(f"Join conditions transform for '{condition["Name"]}'")
+            # Condition operator and Parent literal (using a fixed value instead of a parent column)
+            condition_operator = "="
+            parent_literal = None
+            if "ExtendedAttributesText" in condition:
+                condition_operator = self.__extract_value_from_attribute_text(
+                    condition["ExtendedAttributesText"],
+                    preceded_by="mdde_JoinOperator,",
+                )
+                parent_literal = self.__extract_value_from_attribute_text(
+                    condition["ExtendedAttributesText"],
+                    preceded_by="mdde_ParentLiteralValue,",
+                )
+            condition["Operator"] = condition_operator
+            condition["ParentLiteral"] = parent_literal
+
+            # Condition components (i.e. left and right side of the condition operator)
+            lst_components = condition["c:ExtendedCollections"]["o:ExtendedCollection"]
+            if isinstance(lst_components, dict):
+                lst_components = [lst_components]
+            condition["JoinConditionComponents"] = self.__join_condition_components(
+                lst_components=lst_components, dict_attributes=dict_attributes
             )
+            lst_conditions[i] = condition
 
         composition["JoinConditions"] = lst_conditions
         composition.pop("c:ExtendedCompositions")
         return composition
 
-    def __join_condition_components(self, condition: list, dict_attributes: dict):
-        if isinstance(condition, dict):
-            condition = [condition]
-
-        if len(condition) == 1:
-            #"{1626A879-DBAC-4E54-8A36-28FCB761FF3A},MDDE_LDM,130={2AA569D6-094E-4EA8-BBFF-713196E44D4E},mdde_JoinOperator,1=>\n{E9D50277-1E36-464C-9842-5008646943AB},1=0"
-            Somethi
-        else:
-            for j in range(len(lst_conditions)):
-                condition = lst_conditions[j]
-                lst_conditions = self.clean_keys(condition)
-                condition_operator = "="
-                parent_literal = None
-                if "ExtendedAttributesText" in condition:
-                    condition_operator = self.__extract_value_from_attribute_text(
-                        condition["ExtendedAttributesText"], preceded_by="mdde_JoinOperator,"
-                    )
-                    parent_literal = self.__extract_value_from_attribute_text(
-                        condition["ExtendedAttributesText"], preceded_by="mdde_ParentLiteralValue,"
-                    )
-
-                condition["Operator"] = condition_operator
-                type_join_item = condition["Name"]
-                if type_join_item == "mdde_ChildAttribute":
-                    # Child attribute
-                    # TODO: implement alias to child entity
-                    id_attr = condition["c:Content"]["o:EntityAttribute"]["@Ref"]
-                    condition["AttributeChild"] = dict_attributes[id_attr]
-                    condition.pop("c:Content")
-                elif type_join_item == "mdde_ParentSourceObject":
-                    # Alias to point to a composition entity
-                    condition["ParentAlias"] = condition["c:Content"][
-                        "o:ExtendedSubObject"
-                    ]["@Ref"]
-                    condition.pop("c:Content")
-                elif type_join_item == "mdde_ParentAttribute":
-                    # Parent attribute
-                    type_entity = [
-                        value
-                        for value in ["o:Entity", "o:Shortcut"]
-                        if value in condition["c:Content"]
-                    ][0]
-                    id_attr = condition["c:Content"][type_entity]["@Ref"]
-                    condition["AttributeParent"] = dict_attributes[id_attr]
-                    condition.pop("c:Content")
-                else:
-                    logger.warning(
-                        f"Unhandled kind of join item in condition '{type_join_item}'"
-                    )
-                    # TODO: Handling intermediate entities (Business Rules)
-                lst_conditions[j] = condition
+    def __join_condition_components(
+        self, lst_components: list, dict_attributes: dict
+    ) -> dict:
+        dict_components = {}
+        lst_components = self.clean_keys(lst_components)
+        for component in lst_components:
+            type_component = component["Name"]
+            if type_component == "mdde_ChildAttribute":
+                # Child attribute
+                # TODO: implement alias to child entity
+                logger.debug(f"Added child attribute")
+                id_attr = component["c:Content"]["o:EntityAttribute"]["@Ref"]
+                dict_components["AttributeChild"] = dict_attributes[id_attr]
+            elif type_component == "mdde_ParentSourceObject":
+                # Alias to point to a composition entity
+                logger.debug(f"Added parent entity alias")
+                dict_components["ParentAlias"] = component["c:Content"][
+                    "o:ExtendedSubObject"
+                ]["@Ref"]
+            elif type_component == "mdde_ParentAttribute":
+                # Parent attribute
+                logger.debug(f"Added parent attribute")
+                type_entity = [
+                    value
+                    for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
+                    if value in component["c:Content"]
+                ][0]
+                id_attr = component["c:Content"][type_entity]["@Ref"]
+                dict_components["AttributeParent"] = dict_attributes[id_attr]
+            else:
+                logger.warning(
+                    f"Unhandled kind of join item in condition '{type_component}'"
+                )
+        return dict_components
 
     def __extract_value_from_attribute_text(
         self, extended_attrs_text: str, preceded_by: str

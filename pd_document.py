@@ -31,9 +31,9 @@ class PDDocument:
         logger.debug("Start mapping extraction")
         dict_entities = self.__all_entities()
         dict_attributes = self.__all_attributes()
-        # self.lst_mappings = extractor.mappings(
-        #     dict_entities=dict_entities, dict_attributes=dict_attributes
-        # )
+        self.lst_mappings = extractor.mappings(
+            dict_entities=dict_entities, dict_attributes=dict_attributes
+        )
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
@@ -107,6 +107,7 @@ class PDDocument:
     def write_result(self, file_output: str):
         dict_document = {}
         dict_document['Models'] = self.lst_models
+        dict_document["Mappings"] = self.lst_mappings
         path = Path(file_output)
         Path(path.parent).mkdir(parents=True, exist_ok=True)
         with open(file_output, "w") as outfile:
