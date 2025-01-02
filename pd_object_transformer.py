@@ -106,15 +106,14 @@ class ObjectTransformer:
             if "c:Domain" in attr:
                 # Reroute domain data
                 id_domain = attr["c:Domain"]["o:Domain"]["@Ref"]
-                attr["DomainID"] = id_domain
 
                 # Add matching domain data
-                keys_domain = {"Name", "Code", "DataType", "Lenght", "Precision"}
                 attr_domain = dict_domains[id_domain]
+                keys_domain = {"Id", "Name", "Code", "DataType", "Lenght", "Precision"}
                 attr_domain = {
                     k: attr_domain[k] for k in keys_domain if k in attr_domain
                 }
-                attr.update(attr_domain)
+                attr["Domain"] = attr_domain
                 attr.pop("c:Domain")
             lst_attrs[i] = attr
         entity["Attributes"] = lst_attrs
