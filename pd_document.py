@@ -34,7 +34,6 @@ class PDDocument:
         self.lst_mappings = extractor.mappings(
             dict_entities=dict_entities, dict_attributes=dict_attributes
         )
-        Query = PDDocumentQuery(models=self.lst_models, mappings=self.lst_mappings)
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
@@ -194,7 +193,6 @@ if __name__ == "__main__":
     document = PDDocument(file_pd_ldm=file_model)
     # Saving model objects
     document.write_result(file_output=file_document_output)
-    document.Query
     # lst_models = document.get_MDDE_model()
     # lst_entities = document.get_MDDE_entity()
     # lst_attributes = document.get_MDDE_attribute()
