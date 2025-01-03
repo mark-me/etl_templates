@@ -103,6 +103,7 @@ class ObjectTransformer:
         for i in range(len(lst_attrs)):
             # Change domain data
             attr = lst_attrs[i]
+            attr["Order"] = i
             if "c:Domain" in attr:
                 # Reroute domain data
                 id_domain = attr["c:Domain"]["o:Domain"]["@Ref"]
@@ -229,6 +230,7 @@ class ObjectTransformer:
         lst_joins = self.clean_keys(lst_joins)
         for i in range(len(lst_joins)):
             join = {}
+            join["Order"] = i
             id_attr = lst_joins[i]["c:Object1"]["o:EntityAttribute"]["@Ref"]
             join["Entity1Attribute"] = dict_attributes[id_attr]
             id_attr = lst_joins[i]["c:Object2"]["o:EntityAttribute"]["@Ref"]
@@ -254,23 +256,36 @@ class ObjectTransformer:
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
             entity = lst_entities[i]
-            if "c:SubShortcuts" in entity:
-                lst_attributes = entity["c:SubShortcuts"]["o:Shortcut"]
-                lst_attributes = self.clean_keys(lst_attributes)
-                entity["Attributes"] = lst_attributes
-                entity.pop("c:SubShortcuts")
+            if "c:FullShortcutReplica" in entity:
+                entity.pop("c:FullShortcutReplica")
+            self.__entity_external_attribute(entity)
+            entity.pop("c:SubShortcuts")
             lst_entities[i] = entity
         return lst_entities
+
+    def __entity_external_attribute(self, entity: dict) -> dict:
+        lst_attributes = entity["c:SubShortcuts"]["o:Shortcut"]
+        for i in range(len(lst_attributes)):
+            attr = lst_attributes[i]
+            if "c:FullShortcutReplica" in attr:
+                attr.pop("c:FullShortcutReplica")
+            attr["Order"] = i
+            lst_attributes[i] = attr
+        lst_attributes = self.clean_keys(lst_attributes)
+        entity["Attributes"] = lst_attributes
+        return entity
 
     def mappings(
         self, lst_mappings: list, dict_entities: dict, dict_attributes: dict
     ) -> list:
         lst_ignored_mapping = [
-                "Mapping Br Custom Business Rule Example",
-                "Mapping AggrTotalSalesPerCustomer",
-                "Mapping Pivot Orders Per Country Per Date",
-            ] # TODO: Ignored mappings for 1st version
-        lst_mappings = [m for m in lst_mappings if m["a:Name"] not in lst_ignored_mapping]
+            "Mapping Br Custom Business Rule Example",
+            "Mapping AggrTotalSalesPerCustomer",
+            "Mapping Pivot Orders Per Country Per Date",
+        ]  # TODO: Ignored mappings for 1st version
+        lst_mappings = [
+            m for m in lst_mappings if m["a:Name"] not in lst_ignored_mapping
+        ]
 
         lst_mappings = self.clean_keys(lst_mappings)
         for i in range(len(lst_mappings)):
@@ -318,6 +333,8 @@ class ObjectTransformer:
             lst_attr_maps = self.clean_keys(lst_attr_maps)
             for i in range(len(lst_attr_maps)):
                 attr_map = lst_attr_maps[i]
+                # Ordering
+                attr_map["Order"] = i
                 # Target feature
                 id_attr = attr_map["c:BaseStructuralFeatureMapping.Feature"][
                     "o:EntityAttribute"
@@ -372,6 +389,7 @@ class ObjectTransformer:
         for i in range(len(lst_compositions)):
             # Determine composition clause (FROM/JOIN)
             composition = lst_compositions[i]
+            composition["Order"] = i
             composition["CompositionType"] = self.__extract_value_from_attribute_text(
                 composition["ExtendedAttributesText"], preceded_by="mdde_JoinType,"
             )
@@ -424,6 +442,7 @@ class ObjectTransformer:
 
         for i in range(len(lst_conditions)):
             condition = lst_conditions[i]
+            condition["Order"] = i
             logger.debug(f"Join conditions transform for '{condition["Name"]}'")
             # Condition operator and Parent literal (using a fixed value instead of a parent column)
             condition_operator = "="
