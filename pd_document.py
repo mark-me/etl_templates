@@ -100,11 +100,25 @@ class PDDocument:
         return dict_result
 
     def __serialize_datetime(self, obj):
+        """Retrieves a datetime and formats it to ISO-format
+        
+        Args:
+            obj (any): Object to be formatted into the correct ISO date format if possible
+        
+        Returns:
+            Datetime: Formatted in ISO-format
+        """
+        
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
         raise TypeError("Type not serializable")
 
     def write_result(self, file_output: str):
+        """Writes a json document with all the stored models and mappings to the path stored in file_document_output
+        
+        Args:
+            file_output (str): The file path to which the output will be stored
+        """
         dict_document = {}
         dict_document["Models"] = self.lst_models
         dict_document["Mappings"] = self.lst_mappings
@@ -118,11 +132,24 @@ class PDDocument:
 
 
 class PDDocumentQuery:
+    """Stores the models and mappings within a single PDDocument"""
     def __init__(self, document: PDDocument):
+        """Retrieves a list of all models and a list of all mappings within a single PDDocument
+        
+        Args:
+            document (PDDocument): The representation of a Power Designer logical data model
+        """
         self.lst_models = document.lst_models
         self.lst_mappings = document.lst_mappings
 
     def get_entities(self, name_model: str = None):
+        """Retrieves the given name_model's entities or all entities of models        
+        Args:
+            name_model (str): Name of the model
+            
+        Returns:
+            Array: Each row represents a single entity within a model
+        """
         lst_results = []
         if name_model is None:
             lst_results = [model["Entities"] for model in self.lst_models]
@@ -135,6 +162,11 @@ class PDDocumentQuery:
         return lst_results
 
     def get_MDDE_model(self) -> list:
+        """Retrieves all models from lst_models and returns them in a dictionary
+        
+        Returns:
+            lst_result (dict): Each dictionary value represents a model
+        """
         lst_result = []
         for model in self.lst_models:
             dict_selection = {
@@ -148,6 +180,11 @@ class PDDocumentQuery:
         return lst_result
 
     def get_MDDE_entity(self) -> list:
+        """ Retrieves a dictionary of all enitities within the models stored in lst_models
+        
+        Returns:
+            lst_results (dict): Each dictionary value represents an entity
+        """
         lst_results = []
         for model in self.lst_models:
             lst_entities = model["Entities"]
@@ -170,6 +207,11 @@ class PDDocumentQuery:
         return lst_results
 
     def get_MDDE_attribute(self) -> list:
+        """**Not yet finished** Retrieves all the attributeID's from all models that have IsDocumentModel = True
+
+        Returns:
+            list: Each value represents the ObjectID of a single Attribute
+        """
         # TODO: Complete
         lst_results = []
         # Only the attributes of the non-source model should be deployed
