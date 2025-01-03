@@ -342,19 +342,21 @@ class ObjectTransformer:
                 attr_map["AttributeTarget"] = dict_attributes[id_attr]
                 attr_map.pop("c:BaseStructuralFeatureMapping.Feature")
                 # Source feature's entity alias
-                attr_map["CompositionEntityAlias"] = attr_map["c:ExtendedCollections"][
-                    "o:ExtendedCollection"
-                ]["c:Content"]["o:ExtendedSubObject"]["@Ref"]
-                attr_map.pop("c:ExtendedCollections")
+                if "c:ExtendedCollections" in attr_map:
+                    attr_map["CompositionEntityAlias"] = attr_map["c:ExtendedCollections"][
+                        "o:ExtendedCollection"
+                    ]["c:Content"]["o:ExtendedSubObject"]["@Ref"]
+                    attr_map.pop("c:ExtendedCollections")
                 # Source attribute
-                type_entity = [
-                    value
-                    for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
-                    if value in attr_map["c:SourceFeatures"]
-                ][0]
-                id_attr = attr_map["c:SourceFeatures"][type_entity]["@Ref"]
-                attr_map["AttributesSource"] = dict_attributes[id_attr]
-                attr_map.pop("c:SourceFeatures")
+                if "c:SourceFeatures" in attr_map:
+                    type_entity = [
+                        value
+                        for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
+                        if value in attr_map["c:SourceFeatures"]
+                    ][0]
+                    id_attr = attr_map["c:SourceFeatures"][type_entity]["@Ref"]
+                    attr_map["AttributesSource"] = dict_attributes[id_attr]
+                    attr_map.pop("c:SourceFeatures")
 
                 lst_attr_maps[i] = attr_map
             mapping["AttributeMapping"] = lst_attr_maps
@@ -399,9 +401,14 @@ class ObjectTransformer:
             )
             # Join conditions (ON clause)
             if "c:ExtendedCompositions" in composition:
-                composition = self.__composition_join_conditions(
-                    composition=composition, dict_attributes=dict_attributes
-                )
+                if composition["CompositionType"] != "APPLY":
+                    composition = self.__composition_join_conditions(
+                        composition=composition, dict_attributes=dict_attributes
+                    )
+                else:
+                    composition = self.__composition_apply_conditions(
+                        composition=composition, dict_attributes=dict_attributes
+                    )
             lst_compositions[i] = composition
         mapping["Compositions"] = lst_compositions
         mapping.pop("c:ExtendedCompositions")
@@ -484,7 +491,12 @@ class ObjectTransformer:
                 # Child attribute
                 # TODO: implement alias to child entity
                 logger.debug(f"Added child attribute")
-                id_attr = component["c:Content"]["o:EntityAttribute"]["@Ref"]
+                type_entity = type_entity = [
+                    value
+                    for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
+                    if value in component["c:Content"]
+                ][0]
+                id_attr = component["c:Content"][type_entity]["@Ref"]
                 dict_components["AttributeChild"] = dict_attributes[id_attr]
             elif type_component == "mdde_ParentSourceObject":
                 # Alias to point to a composition entity
@@ -507,6 +519,12 @@ class ObjectTransformer:
                     f"Unhandled kind of join item in condition '{type_component}'"
                 )
         return dict_components
+
+    def __composition_apply_conditions(self, composition: dict, dict_attributes: dict
+    ) -> dict:
+        condition = composition['c:ExtendedCompositions']['o:ExtendedComposition']
+        composition["JoinConditions"] = self.clean_keys(condition)
+        return composition
 
     def __extract_value_from_attribute_text(
         self, extended_attrs_text: str, preceded_by: str

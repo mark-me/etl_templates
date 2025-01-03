@@ -82,10 +82,8 @@ class ObjectExtractor:
         Returns:
             list: List of external models with all their corresponding elements
         """
-        # External models
-        lst_models_external = self.content["c:SourceModels"][
-            "o:Shortcut"
-        ]  # External models
+        # External models from "c:SourceModels"
+        lst_models_external = self.content["c:SourceModels"]["o:Shortcut"]
         for i in range(len(lst_models_external)):
             new_model = lst_models_external[i]
             logger.debug(
@@ -100,8 +98,7 @@ class ObjectExtractor:
         # Assign entities to intermediate 'target models' for external models
         lst_target_model = self.content["c:TargetModels"]["o:TargetModel"]
         dict_target_models = {}
-        for i in range(len(lst_target_model)):
-            target_model = lst_target_model[i]
+        for target_model in lst_target_model:
             logger.debug(
                 f"Found target references for external datamodel '{target_model["a:Name"]}' in ['c:TargetModels']['o:TargetModel']"
             )
@@ -110,9 +107,6 @@ class ObjectExtractor:
                 shortcuts = [shortcuts]
             shortcuts = [i["@Ref"] for i in shortcuts]
             # Add external entity data
-            logger.debug(
-                f"Found shortcut references for external datamodel '{target_model["a:Name"]}' in ['c:SessionShortcuts']['o:Shortcut']"
-            )
             shortcuts_objects = [
                 dict_entities_external[i]
                 for i in shortcuts
@@ -122,21 +116,29 @@ class ObjectExtractor:
                 dict_target_models[target_model["a:TargetModelID"]] = {
                     "Entities": shortcuts_objects
                 }
-            lst_target_model[i] = target_model
+            else:
+                logger.warning(
+                    f"Model target_model '{target_model["a:Name"]}' has no entities and is skipped for processing"
+                )
 
         # Assign entity data from 'target models' to external models
-        for i in range(len(lst_models_external)):
-            new_model = lst_models_external[i]
-            logger.debug(
-                f"Added shortcut references for external datamodel '{lst_models_external[i]["a:Name"]}'"
-            )
-            new_model = self.transformer.clean_keys(new_model)
-            new_model["Entities"] = dict_target_models[new_model["TargetID"]][
-                "Entities"
-            ]
-            lst_models_external[i] = new_model
+        lst_models_correct = []
+        for new_model in lst_models_external:
+            if new_model["a:TargetID"] not in dict_target_models:
+                logger.warning(
+                    f"Excluding model '{new_model["a:Name"]}' from results, because the target model does not exist"
+                )
+            else:
+                new_model = self.transformer.clean_keys(new_model)
+                new_model["Entities"] = dict_target_models[new_model["TargetID"]][
+                    "Entities"
+                ]
+                logger.debug(
+                    f"Added shortcut references for external datamodel '{new_model["Name"]}'"
+                )
+                lst_models_correct.append(new_model)
 
-        return lst_models_external
+        return lst_models_correct
 
     def __entities_external(self) -> dict:
         """Retrieve the Entities of the external model and their associated entities
