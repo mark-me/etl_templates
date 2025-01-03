@@ -37,8 +37,30 @@ class ObjectExtractor:
         lst_entity = self.__entities_internal()
         if isinstance(lst_entity, dict):
             lst_entity = [lst_entity]
-        model = self.content["c:GenerationOrigins"]["o:Shortcut"]  # Document model
-        model = self.transformer.clean_keys(model)
+        if "c:GenerationOrigins" in self.content:
+            model = self.content["c:GenerationOrigins"]["o:Shortcut"]  # Document model
+            model = self.transformer.clean_keys(model)
+        else:
+            lst_include = [
+                "@Id",
+                "@a:ObjectID",
+                "a:Name",
+                "a:Code",
+                "a:CreationDate",
+                "a:Creator",
+                "a:ModificationDate",
+                "a:Modifier",
+                "a:PackageOptionsText",
+                "a:ModelOptionsText",
+                "a:Author",
+                "a:Version",
+                "a:RepositoryFilename",
+                "a:ExtendedAttributesText",
+            ]
+            model = {
+                item: self.content[item] for item in self.content if item in lst_include
+            }
+            model = self.transformer.clean_keys(model)
         model["IsDocumentModel"] = True
         model["Entities"] = lst_entity
         model["Relationships"] = self.__relationships(lst_entity=lst_entity)
@@ -79,16 +101,17 @@ class ObjectExtractor:
         lst_target_model = self.content["c:TargetModels"]["o:TargetModel"]
         dict_target_models = {}
         for i in range(len(lst_target_model)):
+            target_model = lst_target_model[i]
             logger.debug(
-                f"Found target references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:TargetModels']['o:TargetModel']"
+                f"Found target references for external datamodel '{target_model["a:Name"]}' in ['c:TargetModels']['o:TargetModel']"
             )
-            shortcuts = lst_target_model[i]["c:SessionShortcuts"]["o:Shortcut"]
+            shortcuts = target_model["c:SessionShortcuts"]["o:Shortcut"]
             if isinstance(shortcuts, dict):
                 shortcuts = [shortcuts]
             shortcuts = [i["@Ref"] for i in shortcuts]
             # Add external entity data
             logger.debug(
-                f"Found shortcut references for external datamodel '{lst_target_model[i]["a:Name"]}' in ['c:SessionShortcuts']['o:Shortcut']"
+                f"Found shortcut references for external datamodel '{target_model["a:Name"]}' in ['c:SessionShortcuts']['o:Shortcut']"
             )
             shortcuts_objects = [
                 dict_entities_external[i]
@@ -96,9 +119,10 @@ class ObjectExtractor:
                 if i in dict_entities_external.keys()
             ]
             if len(shortcuts_objects) > 0:
-                dict_target_models[lst_target_model[i]["a:TargetModelID"]] = {
+                dict_target_models[target_model["a:TargetModelID"]] = {
                     "Entities": shortcuts_objects
                 }
+            lst_target_model[i] = target_model
 
         # Assign entity data from 'target models' to external models
         for i in range(len(lst_models_external)):
@@ -143,11 +167,11 @@ class ObjectExtractor:
 
     def __relationships(self, lst_entity: list) -> list:
         lst_relationships = []
-        lst_pd_relationships = self.content["c:Relationships"]["o:Relationship"]
-        lst_relationships = self.transformer.relationships(
-            lst_relationships=lst_pd_relationships,
-            lst_entity=lst_entity
-        )
+        if "c:Relationships" in self.content:
+            lst_pd_relationships = self.content["c:Relationships"]["o:Relationship"]
+            lst_relationships = self.transformer.relationships(
+                lst_relationships=lst_pd_relationships, lst_entity=lst_entity
+            )
         return lst_relationships
 
     def mappings(self, dict_entities: list, dict_attributes: list) -> list:

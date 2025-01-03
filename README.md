@@ -12,7 +12,6 @@ The configuration for model input and templating can be adapted in ```config.yml
   * a create table DDL template ```templates/{implementation}/create_table.sql```
 * The output is a file for each DDL written in the directory ```output/{implementation}```
 
-
 ## Getting started
 
 * Clone the repository
@@ -28,13 +27,9 @@ The current code is based on my own sample data structure, but we want to move t
 * [xmltodict](https://pypi.org/project/xmltodict/) is used to convert XML into Python [dictionaries](https://realpython.com/python-dicts/), which in turn can be written to a JSON file.
 * Logs are written as JSON with [python-json-logger](https://pypi.org/project/python-json-logger/) in the terminal and to a file ```log.json``` using log rotation. The logging configuration can be changed in the file ```logging_config.py```.
 
-## Power Designer
-
-[Presentation](https://docs.google.com/presentation/d/e/2PACX-1vSz0YO-Zb-OxNcQNjBMmwl-HqMe3lqDiZ2mH8qlQZGwpCddTSVQRgFPpJm3Dkvh5JsThuhzpjZtZWUj/pub?start=false&loop=false&delayms=3000) on  Power Designer's nomenclature
-
 ## Future developments
 
-* Align way of designing in PowerDesigner and ETL extraction for this script
+* Align way of designing in PowerDesigner and ETL extraction for this script, so we ensure an understanding between the data modeller (business analist) and the Data Engineer. This [presentation](https://docs.google.com/presentation/d/e/2PACX-1vSz0YO-Zb-OxNcQNjBMmwl-HqMe3lqDiZ2mH8qlQZGwpCddTSVQRgFPpJm3Dkvh5JsThuhzpjZtZWUj/pub?start=false&loop=false&delayms=3000) on this is a work in progress.
 * Create templates and procedures for testing on model constraints:
   * Entity identifier
   * Relationships
