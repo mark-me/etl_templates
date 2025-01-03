@@ -252,6 +252,32 @@ class ObjectTransformer:
         relationship.pop("c:ParentIdentifier")
         return relationship
 
+    def models_external(self, lst_models: list, dict_entities: dict) -> list:
+        """Retain 'TargetModels' have references to entities and
+        enrich them with those entities
+
+        Args:
+            lst_models (list): Data target models
+            dict_entities (dict): Contains all external entities
+
+        Returns:
+            list: Target models with entity data
+        """
+        lst_result = []
+        lst_models = self.clean_keys(lst_models)
+        for model in lst_models:
+            shortcuts = model["c:SessionShortcuts"]["o:Shortcut"]
+            if isinstance(shortcuts, dict):
+                shortcuts = [shortcuts]
+            shortcuts = [i["@Ref"] for i in shortcuts]
+            model["Entities"] = [
+                dict_entities[id] for id in shortcuts if id in dict_entities
+            ]
+            if len(model["Entities"]) > 0:
+                model["IsDocumentModel"] = False
+                lst_result.append(model)
+        return lst_result
+
     def entities_external(self, lst_entities: list) -> list:
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
@@ -290,7 +316,9 @@ class ObjectTransformer:
         lst_mappings = self.clean_keys(lst_mappings)
         for i in range(len(lst_mappings)):
             mapping = lst_mappings[i]
-            logger.debug(f"Starting mapping transform for '{mapping['Name']}'")
+            logger.debug(
+                f"Starting mapping transform for {str(i)}) '{mapping['Name']}'"
+            )
 
             # Target entity rerouting and enriching
             id_entity_target = mapping["c:Classifier"]["o:Entity"]["@Ref"]
@@ -343,9 +371,11 @@ class ObjectTransformer:
                 attr_map.pop("c:BaseStructuralFeatureMapping.Feature")
                 # Source feature's entity alias
                 if "c:ExtendedCollections" in attr_map:
-                    attr_map["CompositionEntityAlias"] = attr_map["c:ExtendedCollections"][
-                        "o:ExtendedCollection"
-                    ]["c:Content"]["o:ExtendedSubObject"]["@Ref"]
+                    attr_map["CompositionEntityAlias"] = attr_map[
+                        "c:ExtendedCollections"
+                    ]["o:ExtendedCollection"]["c:Content"]["o:ExtendedSubObject"][
+                        "@Ref"
+                    ]
                     attr_map.pop("c:ExtendedCollections")
                 # Source attribute
                 if "c:SourceFeatures" in attr_map:
@@ -384,16 +414,20 @@ class ObjectTransformer:
         self, mapping: dict, dict_entities: dict, dict_attributes: dict
     ) -> list:
         logger.debug(f"Starting compositions transform for mapping '{mapping['Name']}'")
-        lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"][
-            "c:ExtendedComposition.Content"
-        ]["o:ExtendedSubObject"]
+        lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"]
+        if "c:ExtendedComposition.Content" in lst_compositions:
+            lst_compositions = lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+            logger.error("Composition is different")
         lst_compositions = self.clean_keys(lst_compositions)
         for i in range(len(lst_compositions)):
-            # Determine composition clause (FROM/JOIN)
             composition = lst_compositions[i]
             composition["Order"] = i
+            # Determine composition clause (FROM/JOIN)
             composition["CompositionType"] = self.__extract_value_from_attribute_text(
                 composition["ExtendedAttributesText"], preceded_by="mdde_JoinType,"
+            )
+            logger.debug(
+                f"Composition {composition["CompositionType"]} for '{composition["Name"]}'"
             )
             # Determine entities involved
             composition = self.__composition_entity(
@@ -450,7 +484,9 @@ class ObjectTransformer:
         for i in range(len(lst_conditions)):
             condition = lst_conditions[i]
             condition["Order"] = i
-            logger.debug(f"Join conditions transform for '{condition["Name"]}'")
+            logger.debug(
+                f"Join conditions transform for {str(i)}) '{condition["Name"]}'"
+            )
             # Condition operator and Parent literal (using a fixed value instead of a parent column)
             condition_operator = "="
             parent_literal = None
@@ -490,7 +526,7 @@ class ObjectTransformer:
             if type_component == "mdde_ChildAttribute":
                 # Child attribute
                 # TODO: implement alias to child entity
-                logger.debug(f"Added child attribute")
+                logger.debug("Added child attribute")
                 type_entity = type_entity = [
                     value
                     for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
@@ -500,13 +536,13 @@ class ObjectTransformer:
                 dict_components["AttributeChild"] = dict_attributes[id_attr]
             elif type_component == "mdde_ParentSourceObject":
                 # Alias to point to a composition entity
-                logger.debug(f"Added parent entity alias")
+                logger.debug("Added parent entity alias")
                 dict_components["ParentAlias"] = component["c:Content"][
                     "o:ExtendedSubObject"
                 ]["@Ref"]
             elif type_component == "mdde_ParentAttribute":
                 # Parent attribute
-                logger.debug(f"Added parent attribute")
+                logger.debug("Added parent attribute")
                 type_entity = [
                     value
                     for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
@@ -520,9 +556,10 @@ class ObjectTransformer:
                 )
         return dict_components
 
-    def __composition_apply_conditions(self, composition: dict, dict_attributes: dict
+    def __composition_apply_conditions(
+        self, composition: dict, dict_attributes: dict
     ) -> dict:
-        condition = composition['c:ExtendedCompositions']['o:ExtendedComposition']
+        condition = composition["c:ExtendedCompositions"]["o:ExtendedComposition"]
         composition["JoinConditions"] = self.clean_keys(condition)
         return composition
 

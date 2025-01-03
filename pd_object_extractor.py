@@ -77,68 +77,21 @@ class ObjectExtractor:
         return lst_entity
 
     def __models_external(self) -> list:
-        """Retrieve data on models that are maintained outside of the loaded Power Designer document, but are used for horizontal lineage
+        """Retrieve data on models that are maintained outside of the loaded
+        Power Designer document and are used for horizontal lineage
 
         Returns:
             list: List of external models with all their corresponding elements
         """
-        # External models from "c:SourceModels"
-        lst_models_external = self.content["c:SourceModels"]["o:Shortcut"]
-        for i in range(len(lst_models_external)):
-            new_model = lst_models_external[i]
-            logger.debug(
-                f"Found external datamodel '{new_model["a:Name"]}' in 'c:SourceModels'"
-            )
-            new_model["IsDocumentModel"] = False
-            lst_models_external[i] = new_model
-
-        # External model entity data
-        dict_entities_external = self.__entities_external()
-
-        # Assign entities to intermediate 'target models' for external models
+        # The models will be derived by looking up the TargetModels associated with the entity shortcuts
+        # External entity (shortcut) data
+        dict_entities = self.__entities_external()
+        # Retain 'TargetModels' have references to entities
         lst_target_model = self.content["c:TargetModels"]["o:TargetModel"]
-        dict_target_models = {}
-        for target_model in lst_target_model:
-            logger.debug(
-                f"Found target references for external datamodel '{target_model["a:Name"]}' in ['c:TargetModels']['o:TargetModel']"
-            )
-            shortcuts = target_model["c:SessionShortcuts"]["o:Shortcut"]
-            if isinstance(shortcuts, dict):
-                shortcuts = [shortcuts]
-            shortcuts = [i["@Ref"] for i in shortcuts]
-            # Add external entity data
-            shortcuts_objects = [
-                dict_entities_external[i]
-                for i in shortcuts
-                if i in dict_entities_external.keys()
-            ]
-            if len(shortcuts_objects) > 0:
-                dict_target_models[target_model["a:TargetModelID"]] = {
-                    "Entities": shortcuts_objects
-                }
-            else:
-                logger.warning(
-                    f"Model target_model '{target_model["a:Name"]}' has no entities and is skipped for processing"
-                )
-
-        # Assign entity data from 'target models' to external models
-        lst_models_correct = []
-        for new_model in lst_models_external:
-            if new_model["a:TargetID"] not in dict_target_models:
-                logger.warning(
-                    f"Excluding model '{new_model["a:Name"]}' from results, because the target model does not exist"
-                )
-            else:
-                new_model = self.transformer.clean_keys(new_model)
-                new_model["Entities"] = dict_target_models[new_model["TargetID"]][
-                    "Entities"
-                ]
-                logger.debug(
-                    f"Added shortcut references for external datamodel '{new_model["Name"]}'"
-                )
-                lst_models_correct.append(new_model)
-
-        return lst_models_correct
+        lst_models = self.transformer.models_external(
+            lst_models=lst_target_model, dict_entities=dict_entities
+        )
+        return lst_models
 
     def __entities_external(self) -> dict:
         """Retrieve the Entities of the external model and their associated entities
