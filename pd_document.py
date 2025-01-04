@@ -3,6 +3,7 @@ import json
 import logging
 from pathlib import Path
 
+from pyfiglet import Figlet
 import xmltodict
 
 import logging_config
@@ -20,6 +21,8 @@ class PDDocument:
         Args:
             file_pd_ldm (str): JSON version of a Power Designer document (.ldm)
         """
+        f = Figlet(font='big')
+        print(f.renderText('Power Designer extractor'))
         self.file_pd_ldm = file_pd_ldm
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
