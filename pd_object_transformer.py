@@ -43,7 +43,7 @@ class ObjectTransformer:
             result = lst_object
         return result
 
-    def convert_values_datetime(self, d: dict, convert_key: str) -> dict:
+    def __convert_values_datetime(self, d: dict, convert_key: str) -> dict:
         """Converts all (nested) dictionary entries with a specified name value containing a Unix timestamp to a datetime object
 
         Args:
@@ -58,19 +58,36 @@ class ObjectTransformer:
                 if key == convert_key:
                     d[key] = datetime.fromtimestamp(int(d[key]))
                 else:
-                    self.convert_values_datetime(d[key], convert_key)
+                    self.__convert_values_datetime(d[key], convert_key)
             return d
         elif isinstance(d, list):
             for i in range(len(d)):
-                d[i] = self.convert_values_datetime(d[i], convert_key)
+                d[i] = self.__convert_values_datetime(d[i], convert_key)
             return d
 
     def convert_timestamps(self, pd_content: dict) -> dict:
+        """Converts all unix time integers to datetime objects according to the list of fieldnames specified in the constructor
+
+        Args:
+            pd_content (dict): Power Designer document data
+
+        Returns:
+            dict: The same Power Designer document data, but with timestamps converted
+        """
         for field in self.__timestamp_fields:
-            pd_content = self.convert_values_datetime(pd_content, field)
+            pd_content = self.__convert_values_datetime(pd_content, field)
         return pd_content
 
     def entities_internal(self, lst_entities: list, dict_domains: dict) -> list:
+        """Reroutes internal entity data and enriches attributes with domain data
+
+        Args:
+            lst_entities (list): The Part of the PowerDesigner document that describes entities
+            dict_domains (dict): All domains (i.e. datatypes used for attributes)
+
+        Returns:
+            list: _description_
+        """
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
             entity = lst_entities[i]
@@ -96,6 +113,15 @@ class ObjectTransformer:
         return lst_entities
 
     def __entity_internal_attributes(self, entity: dict, dict_domains: list) -> dict:
+        """Reroutes attribute data for internal entities and enriches them with domain data
+
+        Args:
+            entity (dict): Internal entity
+            dict_domains (list): All domains
+
+        Returns:
+            dict: _description_
+        """
         lst_attrs = entity["c:Attributes"]["o:EntityAttribute"]
         if isinstance(lst_attrs, dict):
             lst_attrs = [lst_attrs]
@@ -122,6 +148,15 @@ class ObjectTransformer:
         return entity
 
     def __entity_internal_identifiers(self, entity: dict, dict_attrs: dict) -> dict:
+        """Reroutes the indices and primary key for an internal entity
+
+        Args:
+            entity (dict): _description_
+            dict_attrs (dict): All entity attri
+
+        Returns:
+            dict: _description_
+        """
         # Set primary identifiers as an attribute of the identifiers
         has_primary = "c:PrimaryIdentifier" in entity
         if has_primary:
@@ -162,7 +197,7 @@ class ObjectTransformer:
         return entity
 
     def relationships(self, lst_relationships: list, lst_entity: list) -> list:
-        """Cleans and enriches relationship data
+        """Reroutes and enriches relationship data
 
         Args:
             lst_relationships (list): Power Designer items describing a relationship between entities
@@ -206,6 +241,15 @@ class ObjectTransformer:
         return lst_relationships
 
     def __relationship_entities(self, relationship: dict, dict_entities: dict) -> dict:
+        """Reroutes and renames the entities the relationship describes
+
+        Args:
+            relationship (dict): The Power Designer document part that describes a relationship
+            dict_entities (dict): All entities
+
+        Returns:
+            dict: The cleaned version of the relationship data
+        """
         id_entity = relationship["c:Object1"]["o:Entity"]["@Ref"]
         relationship["Entity1"] = dict_entities[id_entity]
         relationship.pop("c:Object1")
@@ -222,7 +266,7 @@ class ObjectTransformer:
             dict_attributes (dict): Attributes which is used to enrich the set
 
         Returns:
-            dict: _description_
+            dict: A cleaned version of the relationship data
         """
         lst_joins = relationship["c:Joins"]["o:RelationshipJoin"]
         if isinstance(lst_joins, dict):
@@ -279,6 +323,14 @@ class ObjectTransformer:
         return lst_result
 
     def entities_external(self, lst_entities: list) -> list:
+        """Reroutes and cleans the Power Designer document data on external entities
+
+        Args:
+            lst_entities (list): The part of the Power Designer document that describes external entities
+
+        Returns:
+            list: The cleaned up version of the external entities data
+        """
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
             entity = lst_entities[i]
@@ -304,6 +356,16 @@ class ObjectTransformer:
     def mappings(
         self, lst_mappings: list, dict_entities: dict, dict_attributes: dict
     ) -> list:
+        """Reroutes mapping data and enriches it with entity and attribute data
+
+        Args:
+            lst_mappings (list): The part of the PowerDesigner document which contains the list of mappings
+            dict_entities (dict): All entities in the document (internal and external)
+            dict_attributes (dict): All attributes in the document (internal and external)
+
+        Returns:
+            list: _description_
+        """
         lst_ignored_mapping = [
             "Mapping Br Custom Business Rule Example",
             "Mapping AggrTotalSalesPerCustomer",
@@ -352,6 +414,15 @@ class ObjectTransformer:
         return lst_mappings
 
     def __mapping_attributes(self, mapping: dict, dict_attributes: dict) -> dict:
+        """Cleans and enriches data on the mapping of attributes
+
+        Args:
+            mapping (dict): The part of the PowerDesigner document that describes a mapping
+            dict_attributes (dict): All entities in the document (internal and external)
+
+        Returns:
+            dict: Mapping data where the attribute mapping is cleaned
+        """
         if "c:StructuralFeatureMaps" in mapping:
             lst_attr_maps = mapping["c:StructuralFeatureMaps"][
                 "o:DefaultStructuralFeatureMapping"
@@ -394,6 +465,15 @@ class ObjectTransformer:
         return mapping
 
     def __mapping_entities_source(self, mapping: dict, dict_entities: dict) -> dict:
+        """Cleaning the source entities involved in a mapping
+
+        Args:
+            mapping (dict): The part of the PowerDesigner document that describes a mapping
+            dict_entities (dict): All entities in the document (internal and external)
+
+        Returns:
+            dict: Version of mapping data where source entity data  is cleaned and enriched
+        """
         logger.debug(
             f"Starting sources entities transform for mapping '{mapping['Name']}'"
         )
@@ -413,10 +493,22 @@ class ObjectTransformer:
     def __mapping_compositions(
         self, mapping: dict, dict_entities: dict, dict_attributes: dict
     ) -> list:
+        """Cleans the composition of source entities data
+
+        Args:
+            mapping (dict): The part of the PowerDesigner document that describes a mapping
+            dict_entities (dict): All entities (in- and external)
+            dict_attributes (dict): All attributes (in- and external)
+
+        Returns:
+            list: Version of mapping data where composition data is cleaned and enriched
+        """
         logger.debug(f"Starting compositions transform for mapping '{mapping['Name']}'")
         lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"]
         if "c:ExtendedComposition.Content" in lst_compositions:
-            lst_compositions = lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+            lst_compositions = lst_compositions["c:ExtendedComposition.Content"][
+                "o:ExtendedSubObject"
+            ]
             logger.error("Composition is different")
         lst_compositions = self.clean_keys(lst_compositions)
         for i in range(len(lst_compositions)):
@@ -449,6 +541,15 @@ class ObjectTransformer:
         return mapping
 
     def __composition_entity(self, composition: dict, dict_entities: dict) -> dict:
+        """Reroutes and enriches a composition with entity data.
+
+        Args:
+            composition (dict): Composition data
+            dict_entities (dict): All entities (in- and external)
+
+        Returns:
+            dict: A cleaned and enriched version of composition data
+        """
         logger.debug(
             f"Starting entity transform for composition '{composition['Name']}'"
         )
@@ -471,6 +572,15 @@ class ObjectTransformer:
     def __composition_join_conditions(
         self, composition: dict, dict_attributes: dict
     ) -> dict:
+        """Cleans and enriches data of the join conditions of one of the compositions
+
+        Args:
+            composition (dict): Composition data
+            dict_attributes (dict): All attributes (in- and external)
+
+        Returns:
+            dict: A cleaned and enriched version of join condition data
+        """
         logger.debug(
             f"Join conditions transform for composition '{composition['Name']}'"
         )
@@ -519,6 +629,15 @@ class ObjectTransformer:
     def __join_condition_components(
         self, lst_components: list, dict_attributes: dict
     ) -> dict:
+        """Reroutes, cleans and enriches component data for one join condition
+
+        Args:
+            lst_components (list): Join condition component
+            dict_attributes (dict): All attributes (in- and external)
+
+        Returns:
+            dict: Cleaned, rerouted and enriched join condition component data
+        """
         dict_components = {}
         lst_components = self.clean_keys(lst_components)
         for component in lst_components:
@@ -559,6 +678,7 @@ class ObjectTransformer:
     def __composition_apply_conditions(
         self, composition: dict, dict_attributes: dict
     ) -> dict:
+        # TODO: Find what an APPLY composition is
         condition = composition["c:ExtendedCompositions"]["o:ExtendedComposition"]
         composition["JoinConditions"] = self.clean_keys(condition)
         return composition
@@ -566,6 +686,15 @@ class ObjectTransformer:
     def __extract_value_from_attribute_text(
         self, extended_attrs_text: str, preceded_by: str
     ) -> str:
+        """Extracts the value which follows a text string, where the value ends and the next \n or at the end of the string
+
+        Args:
+            extended_attrs_text (str): The text that contains the value being searched for
+            preceded_by (str): The text that should precede the value being searched for
+
+        Returns:
+            str: The value associated with the preceding text
+        """
         idx_start = extended_attrs_text.find(preceded_by) + len(preceded_by)
         idx_end = extended_attrs_text.find("\n", idx_start)
         idx_end = idx_end if idx_end > -1 else len(extended_attrs_text) + 1
