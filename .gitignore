@@ -180,4 +180,4 @@ output/*
 log.json*
 
 # Sensitive information
-input/Douane CL LDM.ldm
+input/Example_CL_LDM.ldm

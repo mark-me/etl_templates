@@ -1,18 +1,21 @@
 import logging
 
 import logging_config
-from pd_object_transformer import ObjectTransformer
+from pd_transform_model_internal import TransformModelInternal
+from pd_transform_models_external import TransformModelsExternal
+from pd_transform_mappings import TransformMappings
 
 logger = logging.getLogger(__name__)
 
 
 class ObjectExtractor:
-    """Collection of functions used to extract the relevant objects from a Power Designer logical datamodel document"""
+    """Collection of functions used to extract the relevant objects from a Power Designer logical data model document"""
 
     def __init__(self, pd_content):
         self.content = pd_content
-        self.transformer = ObjectTransformer()
-        self.content = self.transformer.convert_timestamps(pd_content=self.content)
+        self.transform_model_internal = TransformModelInternal()
+        self.transform_models_external = TransformModelsExternal()
+        self.transform_mappings = TransformMappings()
         self.dict_domains = self.__domains()
 
     def models(self) -> list:
@@ -33,35 +36,11 @@ class ObjectExtractor:
         Returns:
             dict: All the model's data
         """
+        model = self.transform_model_internal.model(content=self.content)
         # Model add entity data
         lst_entity = self.__entities_internal()
         if isinstance(lst_entity, dict):
             lst_entity = [lst_entity]
-        if "c:GenerationOrigins" in self.content:
-            model = self.content["c:GenerationOrigins"]["o:Shortcut"]  # Document model
-            model = self.transformer.clean_keys(model)
-        else:
-            lst_include = [
-                "@Id",
-                "@a:ObjectID",
-                "a:Name",
-                "a:Code",
-                "a:CreationDate",
-                "a:Creator",
-                "a:ModificationDate",
-                "a:Modifier",
-                "a:PackageOptionsText",
-                "a:ModelOptionsText",
-                "a:Author",
-                "a:Version",
-                "a:RepositoryFilename",
-                "a:ExtendedAttributesText",
-            ]
-            model = {
-                item: self.content[item] for item in self.content if item in lst_include
-            }
-            model = self.transformer.clean_keys(model)
-        model["IsDocumentModel"] = True
         model["Entities"] = lst_entity
         model["Relationships"] = self.__relationships(lst_entity=lst_entity)
         return model
@@ -73,7 +52,7 @@ class ObjectExtractor:
             list: Entities
         """
         lst_entity = self.content["c:Entities"]["o:Entity"]
-        self.transformer.entities_internal(lst_entity, dict_domains=self.dict_domains)
+        self.transform_model_internal.entities(lst_entity, dict_domains=self.dict_domains)
         return lst_entity
 
     def __models_external(self) -> list:
@@ -88,7 +67,7 @@ class ObjectExtractor:
         dict_entities = self.__entities_external()
         # Retain 'TargetModels' have references to entities
         lst_target_model = self.content["c:TargetModels"]["o:TargetModel"]
-        lst_models = self.transformer.models_external(
+        lst_models = self.transform_models_external.models(
             lst_models=lst_target_model, dict_entities=dict_entities
         )
         return lst_models
@@ -104,34 +83,30 @@ class ObjectExtractor:
         lst_entities = self.content["c:Entities"]["o:Shortcut"]
         if isinstance(lst_entities, dict):
             lst_entities = [lst_entities]
-        lst_entities = self.transformer.entities_external(lst_entities=lst_entities)
+        lst_entities = self.transform_models_external.entities(lst_entities=lst_entities)
         for entity in lst_entities:
-            logger.debug(f"Found exteral entity shortcut for '{entity["Name"]}'")
+            logger.debug(f"Found external entity shortcut for '{entity["Name"]}'")
             dict_result[entity["Id"]] = entity
         return dict_result
 
     def __domains(self) -> dict:
         dict_domains = {}
         lst_domains = self.content["c:Domains"]["o:Domain"]
-        if isinstance(lst_domains, dict):
-            lst_domains = [lst_domains]
-        lst_domains = self.transformer.clean_keys(lst_domains)
-        for domain in lst_domains:
-            dict_domains[domain["Id"]] = domain
+        dict_domains = self.transform_model_internal.domains(lst_domains=lst_domains)
         return dict_domains
 
     def __relationships(self, lst_entity: list) -> list:
         lst_relationships = []
         if "c:Relationships" in self.content:
             lst_pd_relationships = self.content["c:Relationships"]["o:Relationship"]
-            lst_relationships = self.transformer.relationships(
+            lst_relationships = self.transform_model_internal.relationships(
                 lst_relationships=lst_pd_relationships, lst_entity=lst_entity
             )
         return lst_relationships
 
     def mappings(self, dict_entities: list, dict_attributes: list) -> list:
         lst_mappings = self.content["c:Mappings"]["o:DefaultObjectMapping"]
-        lst_mappings = self.transformer.mappings(
+        lst_mappings = self.transform_mappings.mappings(
             lst_mappings=lst_mappings,
             dict_entities=dict_entities,
             dict_attributes=dict_attributes,
