@@ -14,7 +14,7 @@ class ObjectTransformer:
     """
 
     def __init__(self):
-        self.timestamp_fields = ["a:CreationDate", "a:ModificationDate"]
+        self.__timestamp_fields = ["a:CreationDate", "a:ModificationDate"]
 
     def clean_keys(self, content: Union[dict, list]):
         """Renames keys of Power Designer objects (i.e. dictionaries) so the '@' and 'a:' prefixes are removed
@@ -66,7 +66,7 @@ class ObjectTransformer:
             return d
 
     def convert_timestamps(self, pd_content: dict) -> dict:
-        for field in self.timestamp_fields:
+        for field in self.__timestamp_fields:
             pd_content = self.convert_values_datetime(pd_content, field)
         return pd_content
 
