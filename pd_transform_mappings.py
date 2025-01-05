@@ -172,12 +172,20 @@ class TransformMappings(ObjectTransformer):
             composition = lst_compositions[i]
             composition["Order"] = i
             # Determine composition clause (FROM/JOIN)
-            composition["CompositionType"] = self.__extract_value_from_attribute_text(
-                composition["ExtendedAttributesText"], preceded_by="mdde_JoinType,"
-            )
-            logger.debug(
-                f"Composition {composition["CompositionType"]} for '{composition["Name"]}'"
-            )
+            if "ExtendedAttributesText" in composition:
+                composition["CompositionType"] = (
+                    self.__extract_value_from_attribute_text(
+                        composition["ExtendedAttributesText"],
+                        preceded_by="mdde_JoinType,",
+                    )
+                )
+                logger.debug(
+                    f"Composition {composition["CompositionType"]} for '{composition["Name"]}'"
+                )
+            else:
+                logger.error(
+                    f"Composition '{composition["Name"]}' has no ExtendedAttributesText to extract a composition type from."
+                )
             # Determine entities involved
             composition = self.__composition_entity(
                 composition=composition, dict_entities=dict_entities
