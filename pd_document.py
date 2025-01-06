@@ -3,10 +3,11 @@ import json
 import logging
 from pathlib import Path
 
+#from pyfiglet import Figlet
 import xmltodict
 
 import logging_config
-from pd_object_extractor import ObjectExtractor
+from pd_extractor import ObjectExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,8 @@ class PDDocument:
         Args:
             file_pd_ldm (str): JSON version of a Power Designer document (.ldm)
         """
+#        f = Figlet(font='big')
+#        print(f.renderText('Power Designer extractor'))
         self.file_pd_ldm = file_pd_ldm
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
@@ -167,6 +170,7 @@ class PDDocumentQuery:
         Returns:
             lst_result (dict): Each dictionary value represents a model
         """
+        # TODO: Genereren ID's op hash
         lst_result = []
         for model in self.lst_models:
             dict_selection = {
@@ -185,6 +189,7 @@ class PDDocumentQuery:
         Returns:
             lst_results (dict): Each dictionary value represents an entity
         """
+        # TODO: Genereren ID's op hash
         lst_results = []
         for model in self.lst_models:
             lst_entities = model["Entities"]
@@ -212,6 +217,7 @@ class PDDocumentQuery:
         Returns:
             list: Each value represents the ObjectID of a single Attribute
         """
+        # TODO: Genereren ID's op hash
         # TODO: Complete
         lst_results = []
         # Only the attributes of the non-source model should be deployed
@@ -230,8 +236,8 @@ class PDDocumentQuery:
 
 
 if __name__ == "__main__":
-    file_model =  "input\Douane CL LDM.ldm" # "input/ExampleDWH.ldm"
-    file_document_output = "output\Douane CL LDM.ldm" # "output/ExampleDWH.json"
+    file_model =  "input/Example_CL_LDM.ldm" # "input/ExampleDWH.ldm"
+    file_document_output = "output/Example_CL_LDM.json" # "output/ExampleDWH.json"
     document = PDDocument(file_pd_ldm=file_model)
     # Saving model objects
     document.write_result(file_output=file_document_output)
