@@ -168,6 +168,7 @@ class TransformMappings(ObjectTransformer):
             ]
             logger.error("Composition is different")
         lst_compositions = self.clean_keys(lst_compositions)
+        # TOFIX: Verwijderen composition['ExtendedBaseCollection.CollectionName'] == 'mdde_Mapping_Examples'
         for i in range(len(lst_compositions)):
             composition = lst_compositions[i]
             composition["Order"] = i
@@ -218,7 +219,7 @@ class TransformMappings(ObjectTransformer):
         logger.debug(
             f"Starting entity transform for composition '{composition['Name']}'"
         )
-        entity = composition["c:ExtendedCollections"]["o:ExtendedCollection"]
+        entity = composition['c:ExtendedComposition.Content']['o:ExtendedSubObject']
         entity = self.clean_keys(entity)
         if "c:Content" in entity:
             type_entity = [
@@ -231,7 +232,7 @@ class TransformMappings(ObjectTransformer):
             logger.debug(f"Composition entity '{entity['Name']}'")
         composition["Entity"] = entity
         composition["EntityAlias"] = composition["Id"]
-        composition.pop("c:ExtendedCollections")
+        composition.pop('c:ExtendedComposition.Content')
         return composition
 
     def __composition_join_conditions(

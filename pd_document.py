@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 
-from pyfiglet import Figlet
+#from pyfiglet import Figlet
 import xmltodict
 
 import logging_config
@@ -21,8 +21,8 @@ class PDDocument:
         Args:
             file_pd_ldm (str): JSON version of a Power Designer document (.ldm)
         """
-        f = Figlet(font='big')
-        print(f.renderText('Power Designer extractor'))
+#        f = Figlet(font='big')
+#        print(f.renderText('Power Designer extractor'))
         self.file_pd_ldm = file_pd_ldm
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
@@ -138,6 +138,7 @@ class PDDocumentQuery:
         return lst_results
 
     def get_MDDE_model(self) -> list:
+        # TODO: Genereren ID's op hash
         lst_result = []
         for model in self.lst_models:
             dict_selection = {
@@ -151,6 +152,7 @@ class PDDocumentQuery:
         return lst_result
 
     def get_MDDE_entity(self) -> list:
+        # TODO: Genereren ID's op hash
         lst_results = []
         for model in self.lst_models:
             lst_entities = model["Entities"]
@@ -173,6 +175,7 @@ class PDDocumentQuery:
         return lst_results
 
     def get_MDDE_attribute(self) -> list:
+        # TODO: Genereren ID's op hash
         # TODO: Complete
         lst_results = []
         # Only the attributes of the non-source model should be deployed
