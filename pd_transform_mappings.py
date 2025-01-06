@@ -167,8 +167,18 @@ class TransformMappings(ObjectTransformer):
                 "o:ExtendedSubObject"
             ]
             logger.error("Composition is different")
+        if isinstance(lst_compositions, dict):
+            lst_compositions = [lst_compositions]
         lst_compositions = self.clean_keys(lst_compositions)
-        # TOFIX: Verwijderen composition['ExtendedBaseCollection.CollectionName'] == 'mdde_Mapping_Examples'
+        # lst_compositions = [item for item in lst_compositions if item['ExtendedBaseCollection.CollectionName'] != 'mdde_Mapping_Examples']
+        # FIXME: Verwijderen compositions die uit extensie voortkomen
+        lst_compositions_new = []
+        for i in range(len(lst_compositions)):
+            if 'ExtendedBaseCollection.CollectionName' in lst_compositions[i]:
+                if lst_compositions[i]['ExtendedBaseCollection.CollectionName'] != 'mdde_Mapping_Examples':
+                    lst_compositions_new.append(lst_compositions[i])
+        lst_compositions = lst_compositions_new
+
         for i in range(len(lst_compositions)):
             composition = lst_compositions[i]
             composition["Order"] = i

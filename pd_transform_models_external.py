@@ -24,7 +24,7 @@ class TransformModelsExternal(ObjectTransformer):
         lst_result = []
         lst_models = self.clean_keys(lst_models)
         for model in lst_models:
-            #model = self.convert_timestamps(model)
+            # model = self.convert_timestamps(model)
             shortcuts = model["c:SessionShortcuts"]["o:Shortcut"]
             if isinstance(shortcuts, dict):
                 shortcuts = [shortcuts]
@@ -35,6 +35,9 @@ class TransformModelsExternal(ObjectTransformer):
             if len(model["Entities"]) > 0:
                 model["IsDocumentModel"] = False
                 lst_result.append(model)
+                model.pop("c:SessionShortcuts")
+                model.pop("c:SessionReplications")
+                model.pop("c:FullShortcutModel")
         return lst_result
 
     def entities(self, lst_entities: list) -> list:

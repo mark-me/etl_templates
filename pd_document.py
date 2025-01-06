@@ -195,7 +195,7 @@ class PDDocumentQuery:
 
 if __name__ == "__main__":
     file_model =  "input/Example_CL_LDM.ldm" # "input/ExampleDWH.ldm"
-    file_document_output = "output/Example_CL_LDM.ldm" # "output/ExampleDWH.json"
+    file_document_output = "output/Example_CL_LDM.json" # "output/ExampleDWH.json"
     document = PDDocument(file_pd_ldm=file_model)
     # Saving model objects
     document.write_result(file_output=file_document_output)
