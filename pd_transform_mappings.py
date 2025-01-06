@@ -98,8 +98,10 @@ class TransformMappings(ObjectTransformer):
                 attr_map["AttributeTarget"] = dict_attributes[id_attr]
                 attr_map.pop("c:BaseStructuralFeatureMapping.Feature")
                 # Source feature's entity alias
+                has_entity_alias = False
                 if "c:ExtendedCollections" in attr_map:
-                    attr_map["CompositionEntityAlias"] = attr_map[
+                    has_entity_alias = True
+                    id_entity_alias = attr_map[
                         "c:ExtendedCollections"
                     ]["o:ExtendedCollection"]["c:Content"]["o:ExtendedSubObject"][
                         "@Ref"
@@ -114,6 +116,8 @@ class TransformMappings(ObjectTransformer):
                     ][0]
                     id_attr = attr_map["c:SourceFeatures"][type_entity]["@Ref"]
                     attr_map["AttributesSource"] = dict_attributes[id_attr]
+                    if has_entity_alias:
+                        attr_map["AttributesSource"]["EntityAlias"] = id_entity_alias
                     attr_map.pop("c:SourceFeatures")
 
                 lst_attr_maps[i] = attr_map
