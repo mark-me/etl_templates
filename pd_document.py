@@ -92,7 +92,7 @@ class PDDocument:
                             "Id": attr["Id"],
                             "Name": attr["Name"],
                             "Code": attr["Code"],
-                            "id_model": model["Id"],
+                            "IdModel": model["Id"],
                             "NameModel": model["Name"],
                             "CodeModel": model["Code"],
                             "IsDocumentModel": not model["IsDocumentModel"],
@@ -104,21 +104,21 @@ class PDDocument:
 
     def __serialize_datetime(self, obj):
         """Retrieves a datetime and formats it to ISO-format
-        
+
         Args:
             obj (any): Object to be formatted into the correct ISO date format if possible
-        
+
         Returns:
             Datetime: Formatted in ISO-format
         """
-        
+
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
         raise TypeError("Type not serializable")
 
     def write_result(self, file_output: str):
         """Writes a json document with all the stored models and mappings to the path stored in file_document_output
-        
+
         Args:
             file_output (str): The file path to which the output will be stored
         """
@@ -138,7 +138,7 @@ class PDDocumentQuery:
     """Stores the models and mappings within a single PDDocument"""
     def __init__(self, document: PDDocument):
         """Retrieves a list of all models and a list of all mappings within a single PDDocument
-        
+
         Args:
             document (PDDocument): The representation of a Power Designer logical data model
         """
@@ -146,10 +146,10 @@ class PDDocumentQuery:
         self.lst_mappings = document.lst_mappings
 
     def get_entities(self, name_model: str = None):
-        """Retrieves the given name_model's entities or all entities of models        
+        """Retrieves the given name_model's entities or all entities of models
         Args:
             name_model (str): Name of the model
-            
+
         Returns:
             Array: Each row represents a single entity within a model
         """
@@ -166,7 +166,7 @@ class PDDocumentQuery:
 
     def get_MDDE_model(self) -> list:
         """Retrieves all models from lst_models and returns them in a dictionary
-        
+
         Returns:
             lst_result (dict): Each dictionary value represents a model
         """
@@ -185,7 +185,7 @@ class PDDocumentQuery:
 
     def get_MDDE_entity(self) -> list:
         """ Retrieves a dictionary of all enitities within the models stored in lst_models
-        
+
         Returns:
             lst_results (dict): Each dictionary value represents an entity
         """
