@@ -10,6 +10,11 @@ class ObjectExtractor:
     """Collection of functions used to extract the relevant objects from a Power Designer logical datamodel document"""
 
     def __init__(self, pd_content):
+        """Initializes the ObjectExtractor class, retrieves ObjectTransformer, pd_content, converts timestamps on content and dict_domains
+
+        Args:
+            pd_content (_type_): JSON version of a Power Designer document (.ldm) referenced from pd_document.py
+        """
         self.content = pd_content
         self.transformer = ObjectTransformer()
         self.content = self.transformer.convert_timestamps(pd_content=self.content)
@@ -156,6 +161,11 @@ class ObjectExtractor:
         return dict_result
 
     def __domains(self) -> dict:
+        """_summary_
+
+        Returns:
+            dict: _description_
+        """
         dict_domains = {}
         lst_domains = self.content["c:Domains"]["o:Domain"]
         if isinstance(lst_domains, dict):
@@ -166,6 +176,14 @@ class ObjectExtractor:
         return dict_domains
 
     def __relationships(self, lst_entity: list) -> list:
+        """_summary_
+
+        Args:
+            lst_entity (list): _description_
+
+        Returns:
+            list: _description_
+        """
         lst_relationships = []
         if "c:Relationships" in self.content:
             lst_pd_relationships = self.content["c:Relationships"]["o:Relationship"]
@@ -175,6 +193,15 @@ class ObjectExtractor:
         return lst_relationships
 
     def mappings(self, dict_entities: list, dict_attributes: list) -> list:
+        """_summary_
+
+        Args:
+            dict_entities (list): _description_
+            dict_attributes (list): _description_
+
+        Returns:
+            list: _description_
+        """
         lst_mappings = self.content["c:Mappings"]["o:DefaultObjectMapping"]
         lst_mappings = self.transformer.mappings(
             lst_mappings=lst_mappings,

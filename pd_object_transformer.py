@@ -14,6 +14,8 @@ class ObjectTransformer:
     """
 
     def __init__(self):
+        """Initialize the ObjectTransformer class. Creates timestamp_fields, which contains CreationDate and ModificationDate in a list
+        """
         self.timestamp_fields = ["a:CreationDate", "a:ModificationDate"]
 
     def clean_keys(self, content: Union[dict, list]):
@@ -66,11 +68,28 @@ class ObjectTransformer:
             return d
 
     def convert_timestamps(self, pd_content: dict) -> dict:
+        """Use convert_values_datetime to convert values from timestamp_fields
+
+        Args:
+            pd_content (dict): JSON version of a Power Designer document (.ldm) 
+
+        Returns:
+            dict: _description_
+        """
         for field in self.timestamp_fields:
             pd_content = self.convert_values_datetime(pd_content, field)
         return pd_content
 
     def entities_internal(self, lst_entities: list, dict_domains: dict) -> list:
+        """_summary_
+
+        Args:
+            lst_entities (list): _description_
+            dict_domains (dict): _description_
+
+        Returns:
+            list: _description_
+        """
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
             entity = lst_entities[i]
@@ -96,6 +115,15 @@ class ObjectTransformer:
         return lst_entities
 
     def __entity_internal_attributes(self, entity: dict, dict_domains: list) -> dict:
+        """_summary_
+
+        Args:
+            entity (dict): _description_
+            dict_domains (list): _description_
+
+        Returns:
+            dict: _description_
+        """
         lst_attrs = entity["c:Attributes"]["o:EntityAttribute"]
         if isinstance(lst_attrs, dict):
             lst_attrs = [lst_attrs]
@@ -122,6 +150,15 @@ class ObjectTransformer:
         return entity
 
     def __entity_internal_identifiers(self, entity: dict, dict_attrs: dict) -> dict:
+        """_summary_
+
+        Args:
+            entity (dict): _description_
+            dict_attrs (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         # Set primary identifiers as an attribute of the identifiers
         has_primary = "c:PrimaryIdentifier" in entity
         if has_primary:
@@ -206,6 +243,15 @@ class ObjectTransformer:
         return lst_relationships
 
     def __relationship_entities(self, relationship: dict, dict_entities: dict) -> dict:
+        """_summary_
+
+        Args:
+            relationship (dict): _description_
+            dict_entities (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         id_entity = relationship["c:Object1"]["o:Entity"]["@Ref"]
         relationship["Entity1"] = dict_entities[id_entity]
         relationship.pop("c:Object1")
@@ -243,6 +289,15 @@ class ObjectTransformer:
     def __relationship_identifiers(
         self, relationship: dict, dict_identifiers: dict
     ) -> dict:
+        """_summary_
+
+        Args:
+            relationship (dict): _description_
+            dict_identifiers (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         lst_indentifier_id = relationship["c:ParentIdentifier"]["o:Identifier"]
         if isinstance(lst_indentifier_id, dict):
             lst_indentifier_id = [lst_indentifier_id]
@@ -253,6 +308,14 @@ class ObjectTransformer:
         return relationship
 
     def entities_external(self, lst_entities: list) -> list:
+        """_summary_
+
+        Args:
+            lst_entities (list): _description_
+
+        Returns:
+            list: _description_
+        """
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
             entity = lst_entities[i]
@@ -264,6 +327,14 @@ class ObjectTransformer:
         return lst_entities
 
     def __entity_external_attribute(self, entity: dict) -> dict:
+        """_summary_
+
+        Args:
+            entity (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         lst_attributes = entity["c:SubShortcuts"]["o:Shortcut"]
         for i in range(len(lst_attributes)):
             attr = lst_attributes[i]
@@ -278,6 +349,16 @@ class ObjectTransformer:
     def mappings(
         self, lst_mappings: list, dict_entities: dict, dict_attributes: dict
     ) -> list:
+        """_summary_
+
+        Args:
+            lst_mappings (list): _description_
+            dict_entities (dict): _description_
+            dict_attributes (dict): _description_
+
+        Returns:
+            list: _description_
+        """
         lst_ignored_mapping = [
             "Mapping Br Custom Business Rule Example",
             "Mapping AggrTotalSalesPerCustomer",
@@ -324,6 +405,15 @@ class ObjectTransformer:
         return lst_mappings
 
     def __mapping_attributes(self, mapping: dict, dict_attributes: dict) -> dict:
+        """_summary_
+
+        Args:
+            mapping (dict): _description_
+            dict_attributes (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         if "c:StructuralFeatureMaps" in mapping:
             lst_attr_maps = mapping["c:StructuralFeatureMaps"][
                 "o:DefaultStructuralFeatureMapping"
@@ -362,6 +452,15 @@ class ObjectTransformer:
         return mapping
 
     def __mapping_entities_source(self, mapping: dict, dict_entities: dict) -> dict:
+        """_summary_
+
+        Args:
+            mapping (dict): _description_
+            dict_entities (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         logger.debug(
             f"Starting sources entities transform for mapping '{mapping['Name']}'"
         )
@@ -381,6 +480,16 @@ class ObjectTransformer:
     def __mapping_compositions(
         self, mapping: dict, dict_entities: dict, dict_attributes: dict
     ) -> list:
+        """_summary_
+
+        Args:
+            mapping (dict): _description_
+            dict_entities (dict): _description_
+            dict_attributes (dict): _description_
+
+        Returns:
+            list: _description_
+        """
         logger.debug(f"Starting compositions transform for mapping '{mapping['Name']}'")
         lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"][
             "c:ExtendedComposition.Content"
@@ -408,6 +517,15 @@ class ObjectTransformer:
         return mapping
 
     def __composition_entity(self, composition: dict, dict_entities: dict) -> dict:
+        """_summary_
+
+        Args:
+            composition (dict): _description_
+            dict_entities (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         logger.debug(
             f"Starting entity transform for composition '{composition['Name']}'"
         )
@@ -430,6 +548,15 @@ class ObjectTransformer:
     def __composition_join_conditions(
         self, composition: dict, dict_attributes: dict
     ) -> dict:
+        """_summary_
+
+        Args:
+            composition (dict): _description_
+            dict_attributes (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         logger.debug(
             f"Join conditions transform for composition '{composition['Name']}'"
         )
@@ -476,6 +603,15 @@ class ObjectTransformer:
     def __join_condition_components(
         self, lst_components: list, dict_attributes: dict
     ) -> dict:
+        """_summary_
+
+        Args:
+            lst_components (list): _description_
+            dict_attributes (dict): _description_
+
+        Returns:
+            dict: _description_
+        """
         dict_components = {}
         lst_components = self.clean_keys(lst_components)
         for component in lst_components:
@@ -511,6 +647,15 @@ class ObjectTransformer:
     def __extract_value_from_attribute_text(
         self, extended_attrs_text: str, preceded_by: str
     ) -> str:
+        """_summary_
+
+        Args:
+            extended_attrs_text (str): _description_
+            preceded_by (str): _description_
+
+        Returns:
+            str: _description_
+        """
         idx_start = extended_attrs_text.find(preceded_by) + len(preceded_by)
         idx_end = extended_attrs_text.find("\n", idx_start)
         idx_end = idx_end if idx_end > -1 else len(extended_attrs_text) + 1
