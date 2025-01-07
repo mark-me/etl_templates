@@ -68,7 +68,7 @@ class PDDocument:
                     "Id": entity["Id"],
                     "Name": entity["Name"],
                     "Code": entity["Code"],
-                    "ModelID": model["Id"],
+                    "IdModel": model["Id"],
                     "NameModel": model["Name"],
                     "CodeModel": model["Code"],
                     "IsDocumentModel": not model["IsDocumentModel"],
