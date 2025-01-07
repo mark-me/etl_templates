@@ -1,3 +1,5 @@
+import datetime # TDODO: Remove
+import json # TODO: Remove
 import logging
 
 import logging_config
@@ -27,7 +29,7 @@ class TransformMappings(ObjectTransformer):
             "Mapping Br Custom Business Rule Example",
             "Mapping AggrTotalSalesPerCustomer",
             "Mapping Pivot Orders Per Country Per Date",
-        ]  # TODO: Ignored mappings for 1st version
+        ]  # TODO: Ignored mappings for 1st version with CrossBreeze example.
         lst_mappings = [
             m for m in lst_mappings if m["a:Name"] not in lst_ignored_mapping
         ]
@@ -101,11 +103,9 @@ class TransformMappings(ObjectTransformer):
                 has_entity_alias = False
                 if "c:ExtendedCollections" in attr_map:
                     has_entity_alias = True
-                    id_entity_alias = attr_map[
-                        "c:ExtendedCollections"
-                    ]["o:ExtendedCollection"]["c:Content"]["o:ExtendedSubObject"][
-                        "@Ref"
-                    ]
+                    id_entity_alias = attr_map["c:ExtendedCollections"][
+                        "o:ExtendedCollection"
+                    ]["c:Content"]["o:ExtendedSubObject"]["@Ref"]
                     attr_map.pop("c:ExtendedCollections")
                 # Source attribute
                 if "c:SourceFeatures" in attr_map:
@@ -165,60 +165,74 @@ class TransformMappings(ObjectTransformer):
             list: Version of mapping data where composition data is cleaned and enriched
         """
         logger.debug(f"Starting compositions transform for mapping '{mapping['Name']}'")
+        # TODO Remvoe writing mapping
+        with open("output/mapping_" + mapping['Name'] + ".json", "w") as outfile:
+            json.dump(
+                mapping, outfile, indent=4, default=self.__serialize_datetime
+            )
+
         lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"]
-        if "c:ExtendedComposition.Content" in lst_compositions:
-            lst_compositions = lst_compositions["c:ExtendedComposition.Content"][
-                "o:ExtendedSubObject"
-            ]
-            logger.error("Composition is different")
-        if isinstance(lst_compositions, dict):
-            lst_compositions = [lst_compositions]
+        # FIXME: Verwijderen compositions die uit extensie voortkomen 'mdde_Mapping_Examples'
         lst_compositions = self.clean_keys(lst_compositions)
-        # lst_compositions = [item for item in lst_compositions if item['ExtendedBaseCollection.CollectionName'] != 'mdde_Mapping_Examples']
-        # FIXME: Verwijderen compositions die uit extensie voortkomen
         lst_compositions_new = []
         for i in range(len(lst_compositions)):
-            if 'ExtendedBaseCollection.CollectionName' in lst_compositions[i]:
-                if lst_compositions[i]['ExtendedBaseCollection.CollectionName'] != 'mdde_Mapping_Examples':
+            if "ExtendedBaseCollection.CollectionName" in lst_compositions[i]:
+                if (
+                    lst_compositions[i]["ExtendedBaseCollection.CollectionName"]
+                    != "mdde_Mapping_Examples"
+                ):
                     lst_compositions_new.append(lst_compositions[i])
-        lst_compositions = lst_compositions_new
-
-        for i in range(len(lst_compositions)):
-            composition = lst_compositions[i]
-            composition["Order"] = i
-            # Determine composition clause (FROM/JOIN)
-            if "ExtendedAttributesText" in composition:
-                composition["CompositionType"] = (
-                    self.__extract_value_from_attribute_text(
-                        composition["ExtendedAttributesText"],
-                        preceded_by="mdde_JoinType,",
-                    )
-                )
-                logger.debug(
-                    f"Composition {composition["CompositionType"]} for '{composition["Name"]}'"
-                )
             else:
-                logger.error(
-                    f"Composition '{composition["Name"]}' has no ExtendedAttributesText to extract a composition type from."
-                )
-            # Determine entities involved
-            composition = self.__composition_entity(
-                composition=composition, dict_entities=dict_entities
+                logger.warning("No 'ExtendedBaseCollection.CollectionName'")
+        lst_compositions = lst_compositions_new["c:ExtendedComposition.Content"][
+            "o:ExtendedSubObject"
+        ]
+
+        # Transform and enrich individual compositions
+        for i in range(len(lst_compositions)):
+            composition = self.__composition(
+                lst_compositions[i],
+                dict_entities=dict_entities,
+                dict_attributes=dict_attributes,
             )
-            # Join conditions (ON clause)
-            if "c:ExtendedCompositions" in composition:
-                if composition["CompositionType"] != "APPLY":
-                    composition = self.__composition_join_conditions(
-                        composition=composition, dict_attributes=dict_attributes
-                    )
-                else:
-                    composition = self.__composition_apply_conditions(
-                        composition=composition, dict_attributes=dict_attributes
-                    )
+            composition["Order"] = i
             lst_compositions[i] = composition
         mapping["Compositions"] = lst_compositions
         mapping.pop("c:ExtendedCompositions")
         return mapping
+
+    def __composition(
+        self, composition: dict, dict_entities: dict, dict_attributes: dict
+    ) -> dict:
+        composition = self.clean_keys(composition)
+        # Determine composition clause (FROM/JOIN)
+        if "ExtendedAttributesText" in composition:
+            composition["CompositionType"] = self.__extract_value_from_attribute_text(
+                composition["ExtendedAttributesText"],
+                preceded_by="mdde_JoinType,",
+            )
+            logger.debug(
+                f"Composition {composition["CompositionType"]} for '{composition["Name"]}'"
+            )
+        else:
+            logger.error(
+                f"Composition '{composition["Name"]}' has no ExtendedAttributesText to extract a composition type from."
+            )
+        # Determine entities involved
+        composition = self.__composition_entity(
+            composition=composition, dict_entities=dict_entities
+        )
+        # Join conditions (ON clause)
+        if "c:ExtendedCompositions" in composition:
+            if composition["CompositionType"] != "APPLY":
+                composition = self.__composition_join_conditions(
+                    composition=composition, dict_attributes=dict_attributes
+                )
+            else:
+                composition = self.__composition_apply_conditions(
+                    composition=composition, dict_attributes=dict_attributes
+                )
+        return composition
 
     def __composition_entity(self, composition: dict, dict_entities: dict) -> dict:
         """Reroutes and enriches a composition with entity data.
@@ -233,7 +247,15 @@ class TransformMappings(ObjectTransformer):
         logger.debug(
             f"Starting entity transform for composition '{composition['Name']}'"
         )
-        entity = composition['c:ExtendedComposition.Content']['o:ExtendedSubObject']
+
+        if "c:ExtendedComposition.Content" in composition:
+            root_data = "c:ExtendedComposition.Content"
+            entity = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+        elif "c:ExtendedCollections" in composition:
+            root_data = "c:ExtendedCollections"
+            entity = composition["c:ExtendedCollections"]["o:ExtendedCollection"]
+        else:
+            raise Exception("No possible entity document part found")
         entity = self.clean_keys(entity)
         if "c:Content" in entity:
             type_entity = [
@@ -246,7 +268,7 @@ class TransformMappings(ObjectTransformer):
             logger.debug(f"Composition entity '{entity['Name']}'")
         composition["Entity"] = entity
         composition["EntityAlias"] = composition["Id"]
-        composition.pop('c:ExtendedComposition.Content')
+        composition.pop(root_data)
         return composition
 
     def __composition_join_conditions(
@@ -382,3 +404,18 @@ class TransformMappings(ObjectTransformer):
         idx_start = value.find("=") + 1
         value = value[idx_start:].upper()
         return value
+
+# TODO: Remove function
+    def __serialize_datetime(self, obj):
+        """Retrieves a datetime and formats it to ISO-format
+
+        Args:
+            obj (any): Object to be formatted into the correct ISO date format if possible
+
+        Returns:
+            Datetime: Formatted in ISO-format
+        """
+
+        if isinstance(obj, datetime.datetime):
+            return obj.isoformat()
+        raise TypeError("Type not serializable")
