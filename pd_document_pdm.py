@@ -6,6 +6,7 @@ from pathlib import Path
 import xmltodict
 
 import logging_config
+from pd_extractor_pdm import PDMObjectExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +25,17 @@ class PDDocumentPDM:
         self.file_pd_pdm = file_pd_pdm
         self.content = self.read_file_model(file_pd_pdm=file_pd_pdm)
         # Extracting data from the file
-        extractor = ObjectExtractor(pd_content=self.content)
+        extractor = PDMObjectExtractor(pd_content=self.content)
         # Extracting models
         logger.debug("Start model extraction")
         self.lst_models = extractor.models()
-        # Extract mappings
-        logger.debug("Start mapping extraction")
-        dict_entities = self.__all_entities()
-        dict_attributes = self.__all_attributes()
-        self.lst_mappings = extractor.mappings(
-            dict_entities=dict_entities, dict_attributes=dict_attributes
-        )
+        # Extract Tabellen
+        logger.debug("Start table extraction")
+        #dict_tables = self.__all_tables()
+        #dict_attributes = self.__all_attributes()
+        #self.lst_mappings = extractor.mappings(
+        #    dict_entities=dict_entities, dict_attributes=dict_attributes
+        #)
 
     def read_file_model(self, file_pd_pdm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
@@ -52,54 +53,6 @@ class PDDocumentPDM:
         # TODO: Root voor PDM relevante data
         dict_data = dict_data["Model"]["o:RootObject"]["c:Children"]["o:Model"]
         return dict_data
-
-    def __all_entities(self) -> dict:
-        """Retrieves all entities regardless of the model they belong to
-
-        Returns:
-            dict: Each dictionary value represents an entity, the key is the internal ID
-        """
-        dict_result = {}
-        for model in self.lst_models:
-            lst_entities = model["Entities"]
-            for entity in lst_entities:
-                dict_result[entity["Id"]] = {
-                    "Id": entity["Id"],
-                    "Name": entity["Name"],
-                    "Code": entity["Code"],
-                    "IdModel": model["Id"],
-                    "NameModel": model["Name"],
-                    "CodeModel": model["Code"],
-                    "IsDocumentModel": not model["IsDocumentModel"],
-                }
-        return dict_result
-
-    def __all_attributes(self) -> dict:
-        """Retrieves all attributes regardless of the model or entity they belong to
-
-        Returns:
-            dict: Each dictionary value represents an attribute, the key is the internal ID
-        """
-        dict_result = {}
-        for model in self.lst_models:
-            lst_entities = model["Entities"]
-            for entity in lst_entities:
-                if "Attributes" in entity:
-                    lst_attributes = entity["Attributes"]
-                    for attr in lst_attributes:
-                        dict_result[attr["Id"]] = {
-                            "Id": attr["Id"],
-                            "Name": attr["Name"],
-                            "Code": attr["Code"],
-                            "IdModel": model["Id"],
-                            "NameModel": model["Name"],
-                            "CodeModel": model["Code"],
-                            "IsDocumentModel": not model["IsDocumentModel"],
-                            "IdEntity": entity["Id"],
-                            "NameEntity": entity["Name"],
-                            "CodeEntity": entity["Code"],
-                        }
-        return dict_result
 
     def __serialize_datetime(self, obj):
         """Retrieves a datetime and formats it to ISO-format
@@ -123,7 +76,7 @@ class PDDocumentPDM:
         """
         dict_document = {}
         dict_document["Models"] = self.lst_models
-        dict_document["Mappings"] = self.lst_mappings
+        #dict_document["Mappings"] = self.lst_mappings
         path = Path(file_output)
         Path(path.parent).mkdir(parents=True, exist_ok=True)
         with open(file_output, "w") as outfile:
@@ -235,8 +188,8 @@ class PDDocumentQuery:
 
 
 if __name__ == "__main__":
-    file_model =  "input/Example_CL_LDM.ldm" # "input/ExampleDWH.ldm"
-    file_document_output = "output/Example_CL_LDM.json" # "output/ExampleDWH.json"
+    file_model =  "input/MDDE (PDM).pdm" # "input/ExampleDWH.ldm"
+    file_document_output = "output/MDDE_PDM.json" # "output/ExampleDWH.json"
     document = PDDocumentPDM(file_pd_pdm=file_model)
     # Saving model objects
     document.write_result(file_output=file_document_output)
