@@ -8,6 +8,8 @@ import xmltodict
 import logging_config
 from pd_extractor_pdm import PDMObjectExtractor
 
+from jinja2 import Environment, FileSystemLoader
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,17 +32,52 @@ class PDDocumentPDM:
         logger.debug("Start model extraction")
         self.lst_models = extractor.models()
         logger.debug("Start view extraction from model")
-        self.lst_views = extractor.views()
+        self.dict_views = extractor.views()
         logger.debug("Start Procedure extraction from model")
-        self.lst_procs = extractor.procs()
-        # Extract Tabellen
-        logger.debug("Start table extraction")
-        #dict_tables = self.__all_tables()
-        #dict_attributes = self.__all_attributes()
-        #self.lst_mappings = extractor.mappings(
-        #    dict_entities=dict_entities, dict_attributes=dict_attributes
-        #)
+        self.dict_procs = extractor.procs()
+        # Create DDL's
+        self.write_ddl("proc", self.dict_procs)
+        self.write_ddl("view", self.dict_views)
+        
+        
+    def write_ddl(self, type_template: str, dict_object: dict):
+        """
+            Creates the DDL's
 
+            Args:
+             type_template (str): The type of templates your want to use to implement your models
+                dict_object (dect): The object that describes the object for the template
+        """ 
+        logger.info(f"Writing implementation for {type_template}")
+        #dir_template = "templates/" + type_template + "/"
+        dir_template = "templates/" + "dedicated-pool/"
+        # Directories for output
+        dir_output = "output/" + type_template + "/"
+        directory = Path(dir_output)
+        directory.mkdir(parents=True, exist_ok=True)
+
+        # Loading templates
+        environment = Environment(
+            loader=FileSystemLoader(dir_template), trim_blocks=True, lstrip_blocks=True
+        )
+        dict_templates = {
+            "schema": environment.get_template("create_schema.sql"),
+            "table": environment.get_template("create_table.sql"),
+            "proc": environment.get_template("create_procedure.sql"),
+            "view": environment.get_template("create_view.sql"),
+        }
+        logger.debug("Start DDL Generation")
+        # Creating DDL's
+        for item in dict_object:
+            logger.debug("Item found: " + item['Name'] )
+            content = dict_templates[type_template].render(
+                item=item
+            )
+            file_output = dir_output + item['Schema'] + "_" + item['Code'] + ".sql"
+            with open(file_output, mode="w", encoding="utf-8") as file_ddl:
+                file_ddl.write(content)
+            logger.info(f"Written Table DDL {file_output}")
+        
     def read_file_model(self, file_pd_pdm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
 
@@ -79,13 +116,13 @@ class PDDocumentPDM:
             file_output (str): The file path to which the output will be stored
         """
         dict_documentViews = {}
-        dict_documentViews["Views"] = self.lst_views
+        dict_documentViews["Views"] = self.dict_views
         with open("./output/views.json", "w") as outfile:
             json.dump(
                 dict_documentViews, outfile, indent=4, default=self.__serialize_datetime
             )
         dict_documentProcs = {}
-        dict_documentProcs["Procs"] = self.lst_procs
+        dict_documentProcs["Procs"] = self.dict_procs
         with open("./output/procs.json", "w") as outfile:
             json.dump(
                 dict_documentProcs, outfile, indent=4, default=self.__serialize_datetime

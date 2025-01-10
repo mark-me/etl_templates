@@ -121,17 +121,19 @@ class TransformProcedures(ObjectTransformer):
         super().__init__()
         
     def procs(self, lst_procs: list) -> list:
+        lst_procs = self.clean_keys(lst_procs)    
+        
         lst_include = [
-            "@Id",
-            "@a:ObjectID",
-            "a:Name",
-            "a:Code",
-            "a:CreationDate",
-            "a:Creator",
-            "a:ModificationDate",
-            "a:Modifier",
-            "a:Author",
-            "a:BeginScript",
+            "Id",
+            "ObjectID",
+            "Name",
+            "Code",
+            "CreationDate",
+            "Creator",
+            "ModificationDate",
+            "Modifier",
+            "Author",
+            "BeginScript",
         ]
         
         lst_procs_new = []
@@ -140,35 +142,41 @@ class TransformProcedures(ObjectTransformer):
             for proc in procs.keys() :
                 if proc in lst_include: 
                     dict_new[proc] = procs[proc]
+                    #TO DO: Model Code gebruiken als Schema Naam.
+                    dict_new.update({"Schema": "DA_Central"})
             lst_procs_new.append(dict_new)
-            
         return lst_procs_new
 
 class TransformViews(ObjectTransformer):
     def __init__(self):
         super().__init__()
-        
+    
     def view(self, lst_view: list) -> list:
         # content = self.convert_timestamps(content)
+        lst_view = self.clean_keys(lst_view) 
         lst_include = [
-            "@Id",
-            "@a:ObjectID",
-            "a:Name",
-            "a:Code",
-            "a:CreationDate",
-            "a:Creator",
-            "a:ModificationDate",
-            "a:Modifier",
-            "a:Author",
-            "a:View.SQLQuery",
+            "Id",
+            "ObjectID",
+            "Name",
+            "Code",
+            "CreationDate",
+            "Creator",
+            "ModificationDate",
+            "Modifier",
+            "Author",
+            "SQLQuery",
         ]
         
         lst_view_new = []
         for view in lst_view:
+            # Rename to remove dot in name
+            view['SQLQuery']= view.pop('View.SQLQuery')
             dict_new = {}
             for item in view.keys() :
                 if item in lst_include: 
                     dict_new[item] = view[item]
+                    #TO DO: Model Code gebruiken als Schema Naam.
+                    dict_new.update({"Schema": "DA_Central"})
             lst_view_new.append(dict_new)
         return lst_view_new
         
