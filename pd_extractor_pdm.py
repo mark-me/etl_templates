@@ -26,6 +26,24 @@ class PDMObjectExtractor:
         lst_models = self.__model()
         return lst_models
     
+    def views(self) -> dict:
+        """Retrieves all views and their corresponding objects used in the PowerDesigner document
+
+        Returns:
+            dict: dict of views
+        """
+        dict_views= self.__views()
+        return dict_views
+    
+    def procs(self) -> dict:
+        """Retrieves all procedures and their corresponding objects used in the PowerDesigner document
+
+        Returns:
+            dict: dict of procedure
+        """
+        dict_procs= self.__procs()
+        return dict_procs
+    
     def __model(self) -> dict:
         """Retrieves the data on the model which is maintained in the loaded Power Designer document
 
@@ -57,3 +75,25 @@ class PDMObjectExtractor:
         lst_domains = self.content["c:Domains"]["o:PhysicalDomain"]
         dict_domains = self.transform_model.domains(lst_domains=lst_domains)
         return dict_domains    
+    
+    def __views(self) -> dict:
+        """Retrieve the Views of the model
+
+        Returns:
+            dict: A dict of Views
+        """
+        # Model view data
+        lst_view = self.content["c:Views"]["o:View"]
+        #return lst_view
+        dict_views = self.transform_views.view(lst_view)
+        return dict_views
+    
+    def __procs(self) -> dict:
+        """Retrieve the Procedures of the model
+
+        Returns:
+            dict: A dict of Procedures
+        """
+        lst_procs = self.content["c:Procedures"]["o:Procedure"]
+        dict_procs = self.transform_procedures.procs(lst_procs)
+        return dict_procs

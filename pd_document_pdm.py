@@ -29,6 +29,10 @@ class PDDocumentPDM:
         # Extracting models
         logger.debug("Start model extraction")
         self.lst_models = extractor.models()
+        logger.debug("Start view extraction from model")
+        self.lst_views = extractor.views()
+        logger.debug("Start Procedure extraction from model")
+        self.lst_procs = extractor.procs()
         # Extract Tabellen
         logger.debug("Start table extraction")
         #dict_tables = self.__all_tables()
@@ -74,7 +78,21 @@ class PDDocumentPDM:
         Args:
             file_output (str): The file path to which the output will be stored
         """
-        dict_document = {}
+        dict_documentViews = {}
+        dict_documentViews["Views"] = self.lst_views
+        with open("./output/views.json", "w") as outfile:
+            json.dump(
+                dict_documentViews, outfile, indent=4, default=self.__serialize_datetime
+            )
+        dict_documentProcs = {}
+        dict_documentProcs["Procs"] = self.lst_procs
+        with open("./output/procs.json", "w") as outfile:
+            json.dump(
+                dict_documentProcs, outfile, indent=4, default=self.__serialize_datetime
+            ) 
+         
+            
+        dict_document = {}    
         dict_document["Models"] = self.lst_models
         #dict_document["Mappings"] = self.lst_mappings
         path = Path(file_output)
@@ -84,107 +102,6 @@ class PDDocumentPDM:
                 dict_document, outfile, indent=4, default=self.__serialize_datetime
             )
         logger.debug(f"Document output is written to '{file_output}'")
-
-
-class PDDocumentQuery:
-    """Stores the models and mappings within a single PDDocument"""
-    def __init__(self, document: PDDocumentPDM):
-        """Retrieves a list of all models and a list of all mappings within a single PDDocument
-
-        Args:
-            document (PDDocument): The representation of a Power Designer logical data model
-        """
-        self.lst_models = document.lst_models
-        self.lst_mappings = document.lst_mappings
-
-    def get_entities(self, name_model: str = None):
-        """Retrieves the given name_model's entities or all entities of models
-        Args:
-            name_model (str): Name of the model
-
-        Returns:
-            Array: Each row represents a single entity within a model
-        """
-        lst_results = []
-        if name_model is None:
-            lst_results = [model["Entities"] for model in self.lst_models]
-        else:
-            lst_results = [
-                model["Entities"]
-                for model in self.lst_models
-                if model["Name"] == name_model
-            ]
-        return lst_results
-
-    def get_MDDE_model(self) -> list:
-        """Retrieves all models from lst_models and returns them in a dictionary
-
-        Returns:
-            lst_result (dict): Each dictionary value represents a model
-        """
-        # TODO: Genereren ID's op hash
-        lst_result = []
-        for model in self.lst_models:
-            dict_selection = {
-                "ModelID": model["TargetID"],
-                "Name": model["Name"],
-                "Code": model["Name"],
-                "CreationDate": model["CreationDate"],
-                "ModificationDate": model["ModificationDate"],
-            }
-            lst_result.append(dict_selection)
-        return lst_result
-
-    def get_MDDE_entity(self) -> list:
-        """ Retrieves a dictionary of all enitities within the models stored in lst_models
-
-        Returns:
-            lst_results (dict): Each dictionary value represents an entity
-        """
-        # TODO: Genereren ID's op hash
-        lst_results = []
-        for model in self.lst_models:
-            lst_entities = model["Entities"]
-            for entity in lst_entities:
-                dict_selection = {
-                    "EntityID": entity["ObjectID"],
-                    "ModelID": model["TargetID"],
-                    "EntityName": entity["Name"],
-                    "EntityCode": entity["Code"],
-                    "EntitySchema": model[
-                        "Code"
-                    ],  # TODO: Reroute schema, now comes from entity, can be set at model level?
-                    "EntityIsShortcut": str(not model["IsDocumentModel"]),
-                    "EntityOrgID": "",  # TODO: When and how used?
-                    "ModelOrgID": "",  # TODO: When and how used?
-                    "CreationDate": entity["CreationDate"],
-                    "ModificationDate": entity["ModificationDate"],
-                }
-                lst_results.append(dict_selection)
-        return lst_results
-
-    def get_MDDE_attribute(self) -> list:
-        """**Not yet finished** Retrieves all the attributeID's from all models that have IsDocumentModel = True
-
-        Returns:
-            list: Each value represents the ObjectID of a single Attribute
-        """
-        # TODO: Genereren ID's op hash
-        # TODO: Complete
-        lst_results = []
-        # Only the attributes of the non-source model should be deployed
-        models_document = [
-            model for model in self.lst_models if model["IsDocumentModel"]
-        ]
-        for model in models_document:
-            lst_entities = model["Entities"]
-            for entity in lst_entities:
-                lst_attributes = entity["Attributes"]
-                for attr in lst_attributes:
-                    dict_selection = {"AttributeID": attr["ObjectID"]}
-                    lst_results.append(dict_selection)
-
-        return lst_results
 
 
 if __name__ == "__main__":

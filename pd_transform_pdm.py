@@ -12,28 +12,24 @@ class TransformModels(ObjectTransformer):
         
     def model(self, content: dict) -> dict:
         content = self.convert_timestamps(content)
-        if "c:GenerationOrigins" in content:
-            model = content["c:GenerationOrigins"]["o:Shortcut"]  # Document model
-            model = self.clean_keys(model)
-        else:
-            lst_include = [
-                "@Id",
-                "@a:ObjectID",
-                "a:Name",
-                "a:Code",
-                "a:CreationDate",
-                "a:Creator",
-                "a:ModificationDate",
-                "a:Modifier",
-                #"a:PackageOptionsText",
-                #"a:ModelOptionsText",
-                "a:Author",
-                "a:Version",
-                #"a:RepositoryFilename",
-                #"a:ExtendedAttributesText",
-            ]
-            model = {item: content[item] for item in content if item in lst_include}
-            model = self.clean_keys(model)
+        lst_include = [
+            "@Id",
+            "@a:ObjectID",
+            "a:Name",
+            "a:Code",
+            "a:CreationDate",
+            "a:Creator",
+            "a:ModificationDate",
+            "a:Modifier",
+            #"a:PackageOptionsText",
+            #"a:ModelOptionsText",
+            "a:Author",
+            "a:Version",
+            #"a:RepositoryFilename",
+            #"a:ExtendedAttributesText",
+        ]
+        model = {item: content[item] for item in content if item in lst_include}
+        model = self.clean_keys(model)
         model["IsDocumentModel"] = True
         return model
     
@@ -61,12 +57,24 @@ class TransformModels(ObjectTransformer):
         lst_tables = self.clean_keys(lst_tables)
         for i in range(len(lst_tables)):
             table = lst_tables[i]
-
+            lst_include = [
+                "@Id",
+                "@a:ObjectID",
+                "Name",
+                "Code",
+                "CreationDate",
+                "Creator",
+                "ModificationDate",
+                "Modifier",
+                "c:Columns",
+            ]
+            table = {item: table[item] for item in table if item in lst_include}
+            
             # Reroute columns
             table = self.__table_columns(table=table, dict_domains=dict_domains)
 
             # Clean table
-            table.pop("c:ClusterObject")
+            # table.pop("c:ClusterObject")
 
             # Reroute default mapping
             # TODO: research role DefaultMapping
@@ -108,14 +116,61 @@ class TransformModels(ObjectTransformer):
         table.pop("c:Columns")
         return table
     
-   
 class TransformProcedures(ObjectTransformer):
     def __init__(self):
         super().__init__()
+        
+    def procs(self, lst_procs: list) -> list:
+        lst_include = [
+            "@Id",
+            "@a:ObjectID",
+            "a:Name",
+            "a:Code",
+            "a:CreationDate",
+            "a:Creator",
+            "a:ModificationDate",
+            "a:Modifier",
+            "a:Author",
+            "a:BeginScript",
+        ]
+        
+        lst_procs_new = []
+        for procs in lst_procs:
+            dict_new = {}
+            for proc in procs.keys() :
+                if proc in lst_include: 
+                    dict_new[proc] = procs[proc]
+            lst_procs_new.append(dict_new)
+            
+        return lst_procs_new
 
 class TransformViews(ObjectTransformer):
     def __init__(self):
         super().__init__()
+        
+    def view(self, lst_view: list) -> list:
+        # content = self.convert_timestamps(content)
+        lst_include = [
+            "@Id",
+            "@a:ObjectID",
+            "a:Name",
+            "a:Code",
+            "a:CreationDate",
+            "a:Creator",
+            "a:ModificationDate",
+            "a:Modifier",
+            "a:Author",
+            "a:View.SQLQuery",
+        ]
+        
+        lst_view_new = []
+        for view in lst_view:
+            dict_new = {}
+            for item in view.keys() :
+                if item in lst_include: 
+                    dict_new[item] = view[item]
+            lst_view_new.append(dict_new)
+        return lst_view_new
         
 class TransformDomains(ObjectTransformer):
     def __init__(self):
