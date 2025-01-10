@@ -28,15 +28,49 @@ class PDDocument:
         # Extracting data from the file
         extractor = ObjectExtractor(pd_content=self.content)
         # Extracting models
-        logger.debug("Start model extraction")
-        self.lst_models = extractor.models()
+        self.lst_models = self.get_models(extractor=extractor)
+        
+        # Old version
+        # logger.debug("Start model extraction")
+        # self.lst_models = extractor.models()
+        
         # Extract mappings
+        self.lst_mappings = self.get_mappings(extractor=extractor)
+        
+        # Old version
+        # logger.debug("Start mapping extraction")
+        # dict_entities = self.__all_entities()
+        # dict_attributes = self.__all_attributes()
+        # self.lst_mappings = extractor.mappings(
+        #     dict_entities=dict_entities, dict_attributes=dict_attributes
+        # )
+        
+        
+    def get_models(self, extractor: ObjectExtractor):
+        """Retrieves model data seperately from the mappings
+
+        Returns:
+            list: The Power Designer models without any mappings
+        """
+        logger.debug("Start model extraction")
+        lst_models = extractor.models()
+        logger.debug("Finished model extraction")
+        return lst_models
+    
+    def get_mappings(self, extractor: ObjectExtractor):
+        """ Retrieves mapping data
+
+        Returns:
+            list: The Power Designer mappings within the models
+        """
         logger.debug("Start mapping extraction")
         dict_entities = self.__all_entities()
         dict_attributes = self.__all_attributes()
-        self.lst_mappings = extractor.mappings(
+        lst_mappings = extractor.mappings(
             dict_entities=dict_entities, dict_attributes=dict_attributes
         )
+        logger.debug("Finished mapping extraction")
+        return lst_mappings
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
