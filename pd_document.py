@@ -26,16 +26,15 @@ class PDDocument:
         self.file_pd_ldm = file_pd_ldm
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
-        extractor = ObjectExtractor(pd_content=self.content)
         # Extracting models
-        self.lst_models = self.get_models(extractor=extractor)
+        self.lst_models = self.get_models()
         
         # Old version
         # logger.debug("Start model extraction")
         # self.lst_models = extractor.models()
         
         # Extract mappings
-        self.lst_mappings = self.get_mappings(extractor=extractor)
+        self.lst_mappings = self.get_mappings()
         
         # Old version
         # logger.debug("Start mapping extraction")
@@ -46,26 +45,30 @@ class PDDocument:
         # )
         
         
-    def get_models(self, extractor: ObjectExtractor):
+    def get_models(self):
         """Retrieves model data seperately from the mappings
 
         Returns:
             list: The Power Designer models without any mappings
         """
+        extractor = ObjectExtractor(pd_content=self.content)
         logger.debug("Start model extraction")
         lst_models = extractor.models()
         logger.debug("Finished model extraction")
         return lst_models
     
-    def get_mappings(self, extractor: ObjectExtractor):
+    def get_mappings(self):
         """ Retrieves mapping data
 
         Returns:
             list: The Power Designer mappings within the models
         """
+        extractor = ObjectExtractor(pd_content=self.content)
         logger.debug("Start mapping extraction")
         dict_entities = self.__all_entities()
         dict_attributes = self.__all_attributes()
+        logger.debug("get lst_mappings")
+        # This is where it goes wrong :)
         lst_mappings = extractor.mappings(
             dict_entities=dict_entities, dict_attributes=dict_attributes
         )
@@ -176,8 +179,8 @@ class PDDocumentQuery:
         Args:
             document (PDDocument): The representation of a Power Designer logical data model
         """
-        self.lst_models = document.lst_models
-        self.lst_mappings = document.lst_mappings
+        self.lst_models = document.get_models()
+        self.lst_mappings = document.get_mappings()
 
     def get_entities(self, name_model: str = None):
         """Retrieves the given name_model's entities or all entities of models
