@@ -12,7 +12,6 @@ from jinja2 import Environment, FileSystemLoader
 
 logger = logging.getLogger(__name__)
 
-
 class PDDocumentPDM:
     """Represents Power Designer logical data model file"""
 
@@ -35,48 +34,6 @@ class PDDocumentPDM:
         self.dict_views = extractor.views()
         logger.debug("Start Procedure extraction from model")
         self.dict_procs = extractor.procs()
-        # Create DDL's
-        self.write_ddl("proc", self.dict_procs)
-        self.write_ddl("view", self.dict_views)
-        
-        
-    def write_ddl(self, type_template: str, dict_object: dict):
-        """
-            Creates the DDL's
-
-            Args:
-             type_template (str): The type of templates your want to use to implement your models
-                dict_object (dect): The object that describes the object for the template
-        """ 
-        logger.info(f"Writing implementation for {type_template}")
-        #dir_template = "templates/" + type_template + "/"
-        dir_template = "templates/" + "dedicated-pool/"
-        # Directories for output
-        dir_output = "output/" + type_template + "/"
-        directory = Path(dir_output)
-        directory.mkdir(parents=True, exist_ok=True)
-
-        # Loading templates
-        environment = Environment(
-            loader=FileSystemLoader(dir_template), trim_blocks=True, lstrip_blocks=True
-        )
-        dict_templates = {
-            "schema": environment.get_template("create_schema.sql"),
-            "table": environment.get_template("create_table.sql"),
-            "proc": environment.get_template("create_procedure.sql"),
-            "view": environment.get_template("create_view.sql"),
-        }
-        logger.debug("Start DDL Generation")
-        # Creating DDL's
-        for item in dict_object:
-            logger.debug("Item found: " + item['Name'] )
-            content = dict_templates[type_template].render(
-                item=item
-            )
-            file_output = dir_output + item['Schema'] + "_" + item['Code'] + ".sql"
-            with open(file_output, mode="w", encoding="utf-8") as file_ddl:
-                file_ddl.write(content)
-            logger.info(f"Written Table DDL {file_output}")
         
     def read_file_model(self, file_pd_pdm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
@@ -140,11 +97,62 @@ class PDDocumentPDM:
             )
         logger.debug(f"Document output is written to '{file_output}'")
 
+class PDDocumentPDMQuery:
+    """Stores the models and mappings within a single PDDocument"""
+    def __init__(self, document: PDDocumentPDM):
+        """Retrieves a list of all models and a list of all mappings within a single PDDocument
+
+        Args:
+            document (PDDocument): The representation of a Power Designer logical data model
+        """
+        # Create DDL's
+        self.write_ddl("proc", document.dict_procs)
+        self.write_ddl("view", document.dict_views)
+        
+    def write_ddl(self, type_template: str, dict_object: dict):
+        """
+            Creates the DDL's
+
+            Args:
+             type_template (str): The type of templates your want to use to implement your models
+                dict_object (dect): The object that describes the object for the template
+        """ 
+        logger.info(f"Writing implementation for {type_template}")
+        #dir_template = "templates/" + type_template + "/"
+        dir_template = "templates/" + "dedicated-pool/"
+        # Directories for output
+        dir_output = "output/" + type_template + "/"
+        directory = Path(dir_output)
+        directory.mkdir(parents=True, exist_ok=True)
+
+        # Loading templates
+        environment = Environment(
+            loader=FileSystemLoader(dir_template), trim_blocks=True, lstrip_blocks=True
+        )
+        dict_templates = {
+            "schema": environment.get_template("create_schema.sql"),
+            "table": environment.get_template("create_table.sql"),
+            "proc": environment.get_template("create_procedure.sql"),
+            "view": environment.get_template("create_view.sql"),
+        }
+        logger.debug("Start DDL Generation")
+        # Creating DDL's
+        for item in dict_object:
+            logger.debug("Item found: " + item['Name'] )
+            content = dict_templates[type_template].render(
+                item=item
+            )
+            file_output = dir_output + item['Schema'] + "_" + item['Code'] + ".sql"
+            with open(file_output, mode="w", encoding="utf-8") as file_ddl:
+                file_ddl.write(content)
+            logger.info(f"Written Table DDL {file_output}")
+
 
 if __name__ == "__main__":
     file_model =  "input/MDDE (PDM).pdm" # "input/ExampleDWH.ldm"
     file_document_output = "output/MDDE_PDM.json" # "output/ExampleDWH.json"
     document = PDDocumentPDM(file_pd_pdm=file_model)
+    documentQ = PDDocumentPDMQuery(document = document)
     # Saving model objects
     document.write_result(file_output=file_document_output)
     # lst_models = document.get_MDDE_model()
