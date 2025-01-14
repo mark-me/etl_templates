@@ -1,7 +1,7 @@
-CREATE TABLE {{schema.name}}.{{table.name}}
+CREATE TABLE {{item.Name}}.{{item.Code}}
 (
-{% for column in columns %}
-    {{column.name}} {{column.data_type}} {% if column.nullable %} NULL {% else %} NOT NULL {% endif %}
+{% for column in item.Columns %}
+    {{column.Name}} {{column.DataType}}
     {%- if not loop.last -%}
         ,
     {% endif %}
@@ -10,7 +10,7 @@ CREATE TABLE {{schema.name}}.{{table.name}}
 )
 WITH
 (
-    DISTRIBUTION = HASH ( {{table.column_distribution}} ),
+    DISTRIBUTION = ROUND_ROBIN,
     CLUSTERED COLUMNSTORE INDEX
 )
 ;

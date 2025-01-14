@@ -12,25 +12,24 @@ class TransformModels(ObjectTransformer):
         
     def model(self, content: dict) -> dict:
         content = self.convert_timestamps(content)
+        content = self.clean_keys(content)
         lst_include = [
-            "@Id",
-            "@a:ObjectID",
-            "a:Name",
-            "a:Code",
-            "a:CreationDate",
-            "a:Creator",
-            "a:ModificationDate",
-            "a:Modifier",
+            "Id",
+            "ObjectID",
+            "Name",
+            "Code",
+            "CreationDate",
+            "Creator",
+            "ModificationDate",
+            "Modifier",
             #"a:PackageOptionsText",
             #"a:ModelOptionsText",
-            "a:Author",
-            "a:Version",
+            "Author",
+            "Version",
             #"a:RepositoryFilename",
             #"a:ExtendedAttributesText",
         ]
         model = {item: content[item] for item in content if item in lst_include}
-        model = self.clean_keys(model)
-        model["IsDocumentModel"] = True
         return model
     
     def domains(self, lst_domains: list) -> dict:
@@ -58,8 +57,8 @@ class TransformModels(ObjectTransformer):
         for i in range(len(lst_tables)):
             table = lst_tables[i]
             lst_include = [
-                "@Id",
-                "@a:ObjectID",
+                "Id",
+                "ObjectID",
                 "Name",
                 "Code",
                 "CreationDate",
@@ -176,7 +175,7 @@ class TransformViews(ObjectTransformer):
                 if item in lst_include: 
                     dict_new[item] = view[item]
                     #TO DO: Model Code gebruiken als Schema Naam.
-                    dict_new.update({"Schema": "DA_Central"})
+                    #dict_new.update({"Schema": "DA_Central"})
             lst_view_new.append(dict_new)
         return lst_view_new
         

@@ -25,7 +25,25 @@ class PDMObjectExtractor:
         """
         lst_models = self.__model()
         return lst_models
-   
+    
+    def views(self) -> dict:
+        """Retrieves all views and their corresponding objects used in the PowerDesigner document
+
+        Returns:
+            dict: dict of views
+        """
+        dict_views= self.__views()
+        return dict_views
+    
+    def procs(self) -> dict:
+        """Retrieves all procedures and their corresponding objects used in the PowerDesigner document
+
+        Returns:
+            dict: dict of procedure
+        """
+        dict_procs= self.__procs()
+        return dict_procs
+    
     def __model(self) -> dict:
         """Retrieves the data on the model which is maintained in the loaded Power Designer document
 
@@ -34,9 +52,10 @@ class PDMObjectExtractor:
         """
         model = self.transform_model.model(content=self.content)
         # Model add table data
-        model["Tables"] = self.__tables()
-        model["Views"] = self.__views()
-        model["Procedures"] = self.__procs()
+        lst_table = self.__tables()
+        #if isinstance(lst_entity, dict):
+        #    lst_entity = [lst_entity]
+        model["Tables"] = lst_table
         #model["Relationships"] = self.__relationships(lst_entity=lst_entity)
         return model
     
@@ -57,7 +76,7 @@ class PDMObjectExtractor:
         dict_domains = self.transform_model.domains(lst_domains=lst_domains)
         return dict_domains    
     
-    def __views(self) -> list:
+    def __views(self) -> dict:
         """Retrieve the Views of the model
 
         Returns:
@@ -66,15 +85,15 @@ class PDMObjectExtractor:
         # Model view data
         lst_view = self.content["c:Views"]["o:View"]
         #return lst_view
-        lst_views = self.transform_views.view(lst_view)
-        return lst_views
+        dict_views = self.transform_views.view(lst_view)
+        return dict_views
     
-    def __procs(self) -> list:
+    def __procs(self) -> dict:
         """Retrieve the Procedures of the model
 
         Returns:
             dict: A dict of Procedures
         """
-        lst_proc = self.content["c:Procedures"]["o:Procedure"]
-        lst_procs = self.transform_procedures.procs(lst_proc)
-        return lst_procs
+        lst_procs = self.content["c:Procedures"]["o:Procedure"]
+        dict_procs = self.transform_procedures.procs(lst_procs)
+        return dict_procs
