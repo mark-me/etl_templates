@@ -1,15 +1,13 @@
 import datetime
 import json
-import logging
 from pathlib import Path
 
-#from pyfiglet import Figlet
 import xmltodict
 
 import logging_config
 from pd_extractor import ObjectExtractor
 
-logger = logging.getLogger(__name__)
+logger = logging_config.logging.getLogger(__name__)
 
 
 class PDDocument:
@@ -21,22 +19,48 @@ class PDDocument:
         Args:
             file_pd_ldm (str): JSON version of a Power Designer document (.ldm)
         """
-#        f = Figlet(font='big')
-#        print(f.renderText('Power Designer extractor'))
+
         self.file_pd_ldm = file_pd_ldm
-        self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
         # Extracting data from the file
+        self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
+        self.lst_models = []
+        self.lst_mappings = []
+
+    def get_models(self):
+        """Retrieves model data separately from the mappings
+
+        Returns:
+            list: The Power Designer models without any mappings
+        """
         extractor = ObjectExtractor(pd_content=self.content)
-        # Extracting models
         logger.debug("Start model extraction")
-        self.lst_models = extractor.models()
-        # Extract mappings
+        lst_models = extractor.models()
+        logger.debug("Finished model extraction")
+        self.lst_models = lst_models
+        return lst_models
+
+    def get_mappings(self):
+        """ Retrieves mapping data
+
+        Returns:
+            list: The Power Designer mappings within the models
+        """
+        # If self.lst_models is not filled, fill
+        if len(self.lst_models) == 0:
+            self.get_models()
+
+        extractor = ObjectExtractor(pd_content=self.content)
         logger.debug("Start mapping extraction")
         dict_entities = self.__all_entities()
         dict_attributes = self.__all_attributes()
-        self.lst_mappings = extractor.mappings(
+        logger.debug("get lst_mappings")
+        # This is where it goes wrong :)
+        lst_mappings = extractor.mappings(
             dict_entities=dict_entities, dict_attributes=dict_attributes
         )
+        logger.debug("Finished mapping extraction")
+        self.lst_mappings = lst_mappings
+        return lst_mappings
 
     def read_file_model(self, file_pd_ldm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
@@ -122,9 +146,12 @@ class PDDocument:
         Args:
             file_output (str): The file path to which the output will be stored
         """
+        # FIXME: Re-enable mappings
         dict_document = {}
-        dict_document["Models"] = self.lst_models
-        dict_document["Mappings"] = self.lst_mappings
+        lst_models = self.get_models()
+        #lst_mappings = self.get_mappings()
+        dict_document["Models"] = lst_models
+        #dict_document["Mappings"] = lst_mappings
         path = Path(file_output)
         Path(path.parent).mkdir(parents=True, exist_ok=True)
         with open(file_output, "w") as outfile:
@@ -142,8 +169,9 @@ class PDDocumentQuery:
         Args:
             document (PDDocument): The representation of a Power Designer logical data model
         """
-        self.lst_models = document.lst_models
-        self.lst_mappings = document.lst_mappings
+        self._document = document
+        self._lst_models = []
+        self._lst_mappings = []
 
     def get_entities(self, name_model: str = None):
         """Retrieves the given name_model's entities or all entities of models
@@ -153,16 +181,27 @@ class PDDocumentQuery:
         Returns:
             Array: Each row represents a single entity within a model
         """
+        lst_models = self.__get_models()
         lst_results = []
         if name_model is None:
-            lst_results = [model["Entities"] for model in self.lst_models]
+            lst_results = [model["Entities"] for model in lst_models]
         else:
             lst_results = [
                 model["Entities"]
-                for model in self.lst_models
+                for model in lst_models
                 if model["Name"] == name_model
             ]
         return lst_results
+
+    def __get_models(self):
+        if len(self._lst_models) == 0:
+            self._lst_models = self._document.get_models()
+        return self._lst_models
+
+    def __get_mapping(self):
+        if len(self._lst_mappings) == 0:
+            self._lst_mappings = self._document.get_mappings()
+        return self._lst_mappings
 
     def get_MDDE_model(self) -> list:
         """Retrieves all models from lst_models and returns them in a dictionary
@@ -171,8 +210,9 @@ class PDDocumentQuery:
             lst_result (dict): Each dictionary value represents a model
         """
         # TODO: Genereren ID's op hash
+        lst_models = self.__get_models()
         lst_result = []
-        for model in self.lst_models:
+        for model in lst_models:
             dict_selection = {
                 "ModelID": model["TargetID"],
                 "Name": model["Name"],
@@ -184,14 +224,15 @@ class PDDocumentQuery:
         return lst_result
 
     def get_MDDE_entity(self) -> list:
-        """ Retrieves a dictionary of all enitities within the models stored in lst_models
+        """ Retrieves a dictionary of all entities within the models stored in lst_models
 
         Returns:
             lst_results (dict): Each dictionary value represents an entity
         """
         # TODO: Genereren ID's op hash
         lst_results = []
-        for model in self.lst_models:
+        lst_models = self.__get_models()
+        for model in lst_models:
             lst_entities = model["Entities"]
             for entity in lst_entities:
                 dict_selection = {
@@ -220,9 +261,10 @@ class PDDocumentQuery:
         # TODO: Genereren ID's op hash
         # TODO: Complete
         lst_results = []
+        lst_models = self.__get_models()
         # Only the attributes of the non-source model should be deployed
         models_document = [
-            model for model in self.lst_models if model["IsDocumentModel"]
+            model for model in lst_models if model["IsDocumentModel"]
         ]
         for model in models_document:
             lst_entities = model["Entities"]
