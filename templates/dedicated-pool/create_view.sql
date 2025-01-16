@@ -1,3 +1,3 @@
-CREATE VIEW {{item.Name}}.{{item.Name}}
+CREATE VIEW [{{item.Schema}}].[{{item.Name}}]
 AS
 {{item.SQLQuery}}

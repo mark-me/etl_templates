@@ -53,8 +53,12 @@ class PDMObjectExtractor:
 
     def __domains(self) -> dict:
         dict_domains = {}
-        lst_domains = self.content["c:Domains"]["o:PhysicalDomain"]
-        dict_domains = self.transform_model.domains(lst_domains=lst_domains)
+        if "c:Domains" in self.content:
+            lst_domains = self.content["c:Domains"]["o:PhysicalDomain"]
+            dict_domains = self.transform_model.domains(lst_domains=lst_domains)
+        else:
+            modelname = self.content["a:Name"]
+            logger.error(f"In het model '{modelname}' zijn geen domains opgenomen.")
         return dict_domains
 
     def __views(self) -> list:
@@ -63,10 +67,16 @@ class PDMObjectExtractor:
         Returns:
             dict: A dict of Views
         """
+        lst_views = []
         # Model view data
-        lst_view = self.content["c:Views"]["o:View"]
+        if "c:Views" in self.content:
+            lst_view = self.content["c:Views"]["o:View"]
+            lst_views = self.transform_views.view(lst_view)
+        else:
+            modelname = self.content["Name"]
+            logger.warning(f"In het model '{modelname}' zijn geen views opgenomen.")
         #return lst_view
-        lst_views = self.transform_views.view(lst_view)
+        
         return lst_views
 
     def __procs(self) -> list:
@@ -75,6 +85,11 @@ class PDMObjectExtractor:
         Returns:
             dict: A dict of Procedures
         """
-        lst_proc = self.content["c:Procedures"]["o:Procedure"]
-        lst_procs = self.transform_procedures.procs(lst_proc)
+        lst_procs = []
+        if "c:Procedures" in self.content:
+            lst_proc = self.content["c:Procedures"]["o:Procedure"]
+            lst_procs = self.transform_procedures.procs(lst_proc)
+        else:
+            modelname = self.content["Name"]
+            logger.warning(f"In het model '{modelname}' zijn geen Procedures opgenomen.")
         return lst_procs
