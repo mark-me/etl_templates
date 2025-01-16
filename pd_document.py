@@ -14,10 +14,10 @@ class PDDocument:
     """Represents Power Designer logical data model file"""
 
     def __init__(self, file_pd_ldm: str):
-        """Extracts data from a JSON-ed version of a Power Designer document and turns it into an object representation
+        """Extracts data from Logical Model Power Designer document and turns it into an object representation
 
         Args:
-            file_pd_ldm (str): JSON version of a Power Designer document (.ldm)
+            file_pd_ldm (str): Power Designer logical data model document (.ldm)
         """
 
         self.file_pd_ldm = file_pd_ldm
