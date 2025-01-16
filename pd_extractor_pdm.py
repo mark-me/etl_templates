@@ -23,9 +23,9 @@ class PDMObjectExtractor:
         Returns:
             list: List of internal model and external models
         """
-        lst_models = self.__model()
+        lst_models = [self.__model()]
         return lst_models
-   
+
     def __model(self) -> dict:
         """Retrieves the data on the model which is maintained in the loaded Power Designer document
 
@@ -39,7 +39,7 @@ class PDMObjectExtractor:
         model["Procedures"] = self.__procs()
         #model["Relationships"] = self.__relationships(lst_entity=lst_entity)
         return model
-    
+
     def __tables(self) -> dict:
         """Retrieve the Tables of the model
 
@@ -50,13 +50,13 @@ class PDMObjectExtractor:
         lst_table = self.content["c:Tables"]["o:Table"]
         self.transform_model.tables(lst_table, dict_domains=self.dict_domains)
         return lst_table
-    
+
     def __domains(self) -> dict:
         dict_domains = {}
         lst_domains = self.content["c:Domains"]["o:PhysicalDomain"]
         dict_domains = self.transform_model.domains(lst_domains=lst_domains)
-        return dict_domains    
-    
+        return dict_domains
+
     def __views(self) -> list:
         """Retrieve the Views of the model
 
@@ -68,7 +68,7 @@ class PDMObjectExtractor:
         #return lst_view
         lst_views = self.transform_views.view(lst_view)
         return lst_views
-    
+
     def __procs(self) -> list:
         """Retrieve the Procedures of the model
 

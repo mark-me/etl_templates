@@ -114,25 +114,29 @@ class PDDocumentPDMQuery:
             "Tables": environment.get_template("create_table.sql"),
             "Views": environment.get_template("create_view.sql"),
             "Procedures": environment.get_template("create_procedure.sql"),
-            
+
         }
         self.__generate_ddl()
 
     def __generate_ddl(self):
         self.lst_template_objects = []
-        for type_object, template in self.dict_templates.items():
-            if type_object in self.lst_models:
-                lst_objects = self.lst_models[type_object]
-                self.lst_template_objects.append(
-                    {"type": type_object, "template": template, "objects": lst_objects})
-            else:
-                logger.warning(f"Object for '{type_object}' does not exist in the model.")
-            
-        self.__write_ddl()
+        for model in self.lst_models:
+            for type_object, template in self.dict_templates.items():
+                if type_object in model:
+                    lst_objects = model[type_object]
+                    for i, object in enumerate(lst_objects):
+                        object["Schema"] = model["Code"]
+                        lst_objects[i] = object
+                    self.lst_template_objects.append(
+                        {"type": type_object, "template": template, "objects": lst_objects})
+                else:
+                    logger.warning(f"Object for '{type_object}' does not exist in the model.")
+
+            self.__write_ddl()
         return self.lst_template_objects
-    
+
     def __write_ddl(self):
-        
+
         for type in self.lst_template_objects:
             for object in type["objects"]:
                 print(type["type"])
