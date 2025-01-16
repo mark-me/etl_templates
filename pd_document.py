@@ -4,10 +4,10 @@ from pathlib import Path
 
 import xmltodict
 
-import logging_config
+from logging_config import logging
 from pd_extractor import ObjectExtractor
 
-logger = logging_config.logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class PDDocument:
@@ -40,7 +40,7 @@ class PDDocument:
         return lst_models
 
     def get_mappings(self):
-        """ Retrieves mapping data
+        """Retrieves mapping data
 
         Returns:
             list: The Power Designer mappings within the models
@@ -149,9 +149,9 @@ class PDDocument:
         # FIXME: Re-enable mappings
         dict_document = {}
         lst_models = self.get_models()
-        #lst_mappings = self.get_mappings()
+        # lst_mappings = self.get_mappings()
         dict_document["Models"] = lst_models
-        #dict_document["Mappings"] = lst_mappings
+        # dict_document["Mappings"] = lst_mappings
         path = Path(file_output)
         Path(path.parent).mkdir(parents=True, exist_ok=True)
         with open(file_output, "w") as outfile:
@@ -163,6 +163,7 @@ class PDDocument:
 
 class PDDocumentQuery:
     """Stores the models and mappings within a single PDDocument"""
+
     def __init__(self, document: PDDocument):
         """Retrieves a list of all models and a list of all mappings within a single PDDocument
 
@@ -187,9 +188,7 @@ class PDDocumentQuery:
             lst_results = [model["Entities"] for model in lst_models]
         else:
             lst_results = [
-                model["Entities"]
-                for model in lst_models
-                if model["Name"] == name_model
+                model["Entities"] for model in lst_models if model["Name"] == name_model
             ]
         return lst_results
 
@@ -224,7 +223,7 @@ class PDDocumentQuery:
         return lst_result
 
     def get_MDDE_entity(self) -> list:
-        """ Retrieves a dictionary of all entities within the models stored in lst_models
+        """Retrieves a dictionary of all entities within the models stored in lst_models
 
         Returns:
             lst_results (dict): Each dictionary value represents an entity
@@ -263,9 +262,7 @@ class PDDocumentQuery:
         lst_results = []
         lst_models = self.__get_models()
         # Only the attributes of the non-source model should be deployed
-        models_document = [
-            model for model in lst_models if model["IsDocumentModel"]
-        ]
+        models_document = [model for model in lst_models if model["IsDocumentModel"]]
         for model in models_document:
             lst_entities = model["Entities"]
             for entity in lst_entities:
@@ -278,8 +275,8 @@ class PDDocumentQuery:
 
 
 if __name__ == "__main__":
-    file_model =  "input/Example_CL_LDM.ldm" # "input/ExampleDWH.ldm"
-    file_document_output = "output/Example_CL_LDM.json" # "output/ExampleDWH.json"
+    file_model = "input/Example_CL_LDM.ldm"  # "input/ExampleDWH.ldm"
+    file_document_output = "output/Example_CL_LDM.json"  # "output/ExampleDWH.json"
     document = PDDocument(file_pd_ldm=file_model)
     # Saving model objects
     document.write_result(file_output=file_document_output)
