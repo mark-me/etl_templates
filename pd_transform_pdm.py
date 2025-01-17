@@ -61,12 +61,17 @@ class TransformModels(ObjectTransformer):
                 "ObjectID",
                 "Name",
                 "Code",
+                "Rowcount",  # Number in PD
                 "CreationDate",
                 "Creator",
                 "ModificationDate",
                 "Modifier",
                 "c:Columns",
             ]
+            if 'Number' in table:
+                table['Rowcount']= table.pop('Number')
+            else:
+                table['Rowcount'] = 0
             table = {item: table[item] for item in table if item in lst_include}
             
             # Reroute columns

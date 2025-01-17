@@ -1,14 +1,13 @@
 import datetime
 import json
-import logging
+import os
 from pathlib import Path
 
 import xmltodict
-
-import logging_config
-from pd_extractor_pdm import PDMObjectExtractor
-
 from jinja2 import Environment, FileSystemLoader
+
+from logging_config import logging
+from pd_extractor_pdm import PDMObjectExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,6 @@ class PDDocuments:
         """
         
         # importing the library
-        import os
         self.folder_pd = folder_pd
         for file in os.listdir(folder_pd):
             if file.endswith(".pdm"):

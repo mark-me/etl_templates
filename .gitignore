@@ -180,4 +180,8 @@ output/*
 log.json*
 
 # Sensitive information
-input/Example_CL_LDM.ldm
+input/*
+# Example information
+!input/ExampleDWH.ldm
+!input/ExampleSource.ldm
+!input/Reference.ldm
