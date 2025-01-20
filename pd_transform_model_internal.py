@@ -141,7 +141,7 @@ class TransformModelInternal(ObjectTransformer):
                 identifier["EntityCode"] = entity["Code"]
                 if "c:Identifier.Attributes" not in identifier:
                     logger.error(
-                        f"No attributes included in the identifier '{identifier["Name"]}'"
+                        f"No attributes included in the identifier '{identifier['Name']}'"
                     )
                 else:
                     lst_attr_id = identifier["c:Identifier.Attributes"][
