@@ -189,6 +189,7 @@ class TransformMappings(ObjectTransformer):
 
         # Transform and enrich individual compositions
 
+        # eerste countlist bepaling niet meer nodig indien de if code alle gevallen bevat
         countlist = len(
             lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
         )
@@ -229,6 +230,7 @@ class TransformMappings(ObjectTransformer):
             )
             composition["Order"] = i
             lst_compositions[i] = composition
+        lst_compositions.pop("c:ExtendedComposition.Content")    
         mapping["Compositions"] = lst_compositions
         mapping.pop("c:ExtendedCompositions")
         return mapping

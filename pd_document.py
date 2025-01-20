@@ -146,12 +146,12 @@ class PDDocument:
         Args:
             file_output (str): The file path to which the output will be stored
         """
-        # FIXME: Re-enable mappings
+
         dict_document = {}
         lst_models = self.get_models()
-        # lst_mappings = self.get_mappings()
+        lst_mappings = self.get_mappings()
         dict_document["Models"] = lst_models
-        # dict_document["Mappings"] = lst_mappings
+        dict_document["Mappings"] = lst_mappings
         path = Path(file_output)
         Path(path.parent).mkdir(parents=True, exist_ok=True)
         with open(file_output, "w") as outfile:
