@@ -6,6 +6,11 @@ from pathlib import Path
 import xmltodict
 from jinja2 import Environment, FileSystemLoader
 
+from pd_transform_model_internal import TransformModelInternal
+from pd_transform_models_external import TransformModelsExternal
+from pd_transform_mappings import TransformMappings
+from pd_transform_model_physical import TransformModelPhysical
+
 from logging_config import logging
 #from pd_extractor_pdm import PDMObjectExtractor
 
@@ -56,10 +61,13 @@ class PDDocument:
             dict: The Power Designer data converted to a dictionary
         """
         # Function not yet used, but candidate for reading XML file
+        model_extension = Path(file_pd).suffix
         with open(file_pd) as fd:
             doc = fd.read()
         dict_data = xmltodict.parse(doc)
+        dict_data["Model"]["o:RootObject"]["c:Children"]["o:Model"]["a:ModelExtension"] = model_extension
         dict_data = dict_data["Model"]["o:RootObject"]["c:Children"]["o:Model"]
+        
         return dict_data
     
     def __serialize_datetime(self, obj):
@@ -81,11 +89,17 @@ class ObjectExtractor:
 
     def __init__(self, pd_content):
         self.content = pd_content
-        #self.transform_model_internal = TransformModelInternal()
-        #self.transform_model_physical = TransformModelPhysical()
-        #self.transform_models_external = TransformModelsExternal()
-        #self.transform_mappings = TransformMappings()
-        self.dict_domains = self.__domains()
+        extenstion = self.content["a:ModelExtension"] 
+        if extenstion == ".pdm":
+            self.transform_model_physical = TransformModelPhysical()
+            self.dict_domains = self.__domains()
+        elif extenstion == ".ldm":
+            self.transform_model_internal = TransformModelInternal()
+            self.transform_models_external = TransformModelsExternal()
+            self.transform_mappings = TransformMappings()
+            self.dict_domains = self.__domains()
+        else:
+             logger.error(f"No extractor for extention: '{extenstion}'")  
 
     def models(self) -> list:
         """Retrieves all models and their corresponding objects used in the PowerDesigner document
@@ -93,9 +107,17 @@ class ObjectExtractor:
         Returns:
             list: List of internal model and external models
         """
-        dict_model_internal = self.__model_internal()
-        dict_model_physical = self.__models_physical()
-        lst_models_external = self.__models_external()
+        dict_model_internal = {}
+        lst_models_external = []
+        dict_model_physical = {}
+        extenstion = self.content["a:ModelExtension"] 
+        if extenstion == ".pdm":
+            dict_model_physical = self.__models_physical()
+        elif extenstion == ".ldm":
+            dict_model_internal = self.__model_internal()
+            lst_models_external = self.__models_external()
+        else:
+             logger.error(f"No model for extention: '{extenstion}'")  
         # Combine models
         lst_models = lst_models_external + [dict_model_internal] + [dict_model_physical]
         return lst_models
@@ -121,7 +143,7 @@ class ObjectExtractor:
         Returns:
             dict: All the model's data
         """
-        model = self.transform_model_internal.model(content=self.content)
+        model = self.transform_model_physical.model(content=self.content)
         # Model add table data
         model["Tables"] = self.__tables()
         model["Views"] = self.__views()
@@ -180,14 +202,19 @@ class ObjectExtractor:
         """
         # Model table data
         lst_table = self.content["c:Tables"]["o:Table"]
-        self.transform_model.tables(lst_table, dict_domains=self.dict_domains)
+        self.transform_model_physical.tables(lst_table, dict_domains=self.dict_domains)
         return lst_table
 
     def __domains(self) -> dict:
         dict_domains = {}
         if "c:Domains" in self.content:
-            lst_domains = self.content["c:Domains"]["o:PhysicalDomain"]
-            dict_domains = self.transform_model_internal.domains(lst_domains=lst_domains)
+            extenstion = self.content["a:ModelExtension"] 
+            if extenstion == ".pdm":
+                lst_domains = self.content["c:Domains"]["o:PhysicalDomain"]
+                dict_domains = self.transform_model_physical.domains(lst_domains=lst_domains)
+            elif extenstion == ".ldm":
+                lst_domains = self.content["c:Domains"]["o:Domain"]
+                dict_domains = self.transform_model_internal.domains(lst_domains=lst_domains)
         else:
             modelname = self.content["a:Name"]
             logger.error(f"In het model '{modelname}' zijn geen domains opgenomen.")
@@ -212,7 +239,7 @@ class ObjectExtractor:
         # Model view data
         if "c:Views" in self.content:
             lst_view = self.content["c:Views"]["o:View"]
-            lst_views = self.transform_views.view(lst_view)
+            lst_views = self.transform_model_physical.view(lst_view)
         else:
             modelname = self.content["Name"]
             logger.warning(f"In het model '{modelname}' zijn geen views opgenomen.")
@@ -229,7 +256,7 @@ class ObjectExtractor:
         lst_procs = []
         if "c:Procedures" in self.content:
             lst_proc = self.content["c:Procedures"]["o:Procedure"]
-            lst_procs = self.transform_procedures.procs(lst_proc)
+            lst_procs = self.transform_model_physical.procs(lst_proc)
         else:
             modelname = self.content["Name"]
             logger.warning(f"In het model '{modelname}' zijn geen Procedures opgenomen.")
