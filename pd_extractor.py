@@ -26,8 +26,9 @@ class ObjectExtractor:
         """
         dict_model_internal = self.__model_internal()
         lst_models_external = self.__models_external()
+        dict_model_physical = self.__models_physical()
         # Combine models
-        lst_models = lst_models_external + [dict_model_internal]
+        lst_models = lst_models_external + [dict_model_internal] + [dict_model_physical]
         return lst_models
 
     def __model_internal(self) -> dict:
@@ -85,7 +86,7 @@ class ObjectExtractor:
             lst_entities = [lst_entities]
         lst_entities = self.transform_models_external.entities(lst_entities=lst_entities)
         for entity in lst_entities:
-            logger.debug(f"Found external entity shortcut for '{entity["Name"]}'")
+            logger.debug(f"Found external entity shortcut for '{entity['Name']}'")
             dict_result[entity["Id"]] = entity
         return dict_result
 
