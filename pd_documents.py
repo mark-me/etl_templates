@@ -31,7 +31,8 @@ class PDDocuments:
         importfiles.glob("*.*dm")       
         lst_files = list(importfiles.glob("*.*dm"))
         for file_pd in lst_files:
-            PDDocument(file_pd)
+            document = PDDocument(file_pd)
+            PDDocumentQuery(document=document)
         print("")
 
 class PDDocument:
@@ -271,6 +272,76 @@ class ObjectExtractor:
         )
         return lst_mappings
 
+class PDDocumentQuery:
+    """Stores the models and mappings within a single PDDocument"""
+
+    def __init__(self, document: PDDocument):
+        """Retrieves a list of all models and a list of all mappings within a single PDDocument
+
+        Args:
+            document (PDDocument): The representation of a Power Designer logical data model
+        """
+        self.lst_models = document.lst_models
+        # self.document = document
+        # Create DDL's
+        # self.write_ddl("proc", document.dict_procs)
+        # self.write_ddl("view", document.dict_views)
+        # self.write_ddl("view", document.lst_models["Views"])
+        self.write_ddl()
+
+    def write_ddl(self):
+        """
+        Creates the DDL's
+
+        Args:
+         type_template (str): The type of templates your want to use to implement your models
+            dict_object (dect): The object that describes the object for the template
+        """
+        # Loading templates
+        dest_type = "dedicated-pool"
+        dir_template = "templates/" + dest_type + "/"
+        environment = Environment(
+            loader=FileSystemLoader(dir_template), trim_blocks=True, lstrip_blocks=True
+        )
+        self.dict_templates = {
+            "schema": environment.get_template("create_schema.sql"),
+            "Tables": environment.get_template("create_table.sql"),
+            "Views": environment.get_template("create_view.sql"),
+            "Procedures": environment.get_template("create_procedure.sql"),
+
+        }
+        self.__generate_ddl()
+
+    def __generate_ddl(self):
+        self.lst_template_objects = []
+        for model in self.lst_models:
+            for type_object, template in self.dict_templates.items():
+                if type_object in model:
+                    lst_objects = model[type_object]
+                    for i, object in enumerate(lst_objects):
+                        object["Schema"] = model["Code"]
+                        lst_objects[i] = object
+                    self.lst_template_objects.append(
+                        {"type": type_object, "template": template, "objects": lst_objects})
+                else:
+                    logger.warning(f"Object for '{type_object}' does not exist in the model.")
+
+            self.__write_ddl()
+        return self.lst_template_objects
+
+    def __write_ddl(self):
+        for type in self.lst_template_objects:
+            for object in type["objects"]:
+                #print(type["type"])
+                dir_output = "output/" + object["Schema"] + "/" + type["type"] + "/"
+                directory = Path(dir_output)
+                #directory.rmdir()
+                directory.mkdir(parents=True, exist_ok=True)
+                content = self.dict_templates[type["type"]].render(item=object)
+                file_output = dir_output + object["Code"] + ".sql"
+                with open(file_output, mode="w", encoding="utf-8") as file_ddl:
+                    file_ddl.write(content)
+                logger.info(f"Written Table DDL {file_output}")
 # Run Current Class
 if __name__ == "__main__":
     folder_models = "input/"  # "input"
