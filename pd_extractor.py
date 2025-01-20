@@ -26,9 +26,9 @@ class ObjectExtractor:
         """
         dict_model_internal = self.__model_internal()
         lst_models_external = self.__models_external()
-        dict_model_physical = self.__models_physical()
+        # dict_model_physical = self.__models_physical()
         # Combine models
-        lst_models = lst_models_external + [dict_model_internal] + [dict_model_physical]
+        lst_models = lst_models_external + [dict_model_internal] #+ [dict_model_physical]
         return lst_models
 
     def __model_internal(self) -> dict:
