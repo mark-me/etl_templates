@@ -6,12 +6,20 @@
 ETL_Templates documentation
 ===========================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+**ETL_Templates** is a Python based script to automate the creation of DDL scripts based on PowerDesigner models (.ldm)
+See :doc:`Usage` for further information on how to use this script to create DDL scripts
 
+
+.. note ::
+   This project is under active development
+
+Contents
+--------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 
+   Usage
+   PowerDesigner
+   pd_document
+   pd_extractor
+   pd_transform
