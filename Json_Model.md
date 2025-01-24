@@ -17,10 +17,13 @@
                         * Entity: 
                         * JoinConditions (mdde_JoinCondition)
                             * JoinCondition
-                                * AttributeChild: 
-                                * AttributeParent: 
+                                * AttributeChild
+                                * AttributeParent
                                 * LiteralValue
             * AttributeMapping
+                * Expression
+                * AttributesSource
+                * AttributeTarget
     * Filter
     * Pivot
     * Agg
