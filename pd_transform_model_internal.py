@@ -16,24 +16,24 @@ class TransformModelInternal(ObjectTransformer):
             model = content["c:GenerationOrigins"]["o:Shortcut"]  # Document model
             model = self.clean_keys(model)
         else:
+            content = self.clean_keys(content)
             lst_include = [
-                "@Id",
-                "@a:ObjectID",
-                "a:Name",
-                "a:Code",
-                "a:CreationDate",
-                "a:Creator",
-                "a:ModificationDate",
-                "a:Modifier",
-                "a:PackageOptionsText",
-                "a:ModelOptionsText",
-                "a:Author",
-                "a:Version",
-                "a:RepositoryFilename",
-                "a:ExtendedAttributesText",
+                "Id",
+                "ObjectID",
+                "Version",
+                "Name",
+                "Code",
+                "CreationDate",
+                "Creator",
+                "ModificationDate",
+                "Modifier",
+                "PackageOptionsText",
+                "ModelOptionsText",
+                "Author",
+                "RepositoryFilename",
+                "ExtendedAttributesText",
             ]
             model = {item: content[item] for item in content if item in lst_include}
-            model = self.clean_keys(model)
         model["IsDocumentModel"] = True
         return model
 
@@ -69,13 +69,37 @@ class TransformModelInternal(ObjectTransformer):
                 for d in entity["Attributes"]
             }
 
-            # Identifiers and primary identifier
-            entity = self.__entity_identifiers(entity=entity, dict_attrs=dict_attrs)
-
+            # Rename Number to Rowcount
+            if 'Number' in entity:
+                entity['Rowcount']= entity.pop('Number')
+            else:
+                entity['Rowcount'] = 0
+            
             # Reroute default mapping
             # TODO: research role DefaultMapping
+            lst_include = [
+                "Id",
+                "ObjectID",
+                "Version",
+                "Name",
+                "Code",
+                "Rowcount",
+                "CreationDate",
+                "Creator",
+                "ModificationDate",
+                "Modifier",
+                "ExtendedAttributesText",
+                "Attributes",
+                "Identifiers",
+            ]
+            entity = {item: entity[item] for item in entity if item in lst_include}
+    
+            # Identifiers and primary identifier
+            entity = self.__entity_identifiers(entity=entity, dict_attrs=dict_attrs)
+            
             lst_entities[i] = entity
         return lst_entities
+
 
     def __entity_attributes(self, entity: dict, dict_domains: list) -> dict:
         """Reroutes attribute data for internal entities and enriches them with domain data
