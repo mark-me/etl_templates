@@ -24,10 +24,18 @@
                 * Expression
                 * AttributesSource
                 * AttributeTarget
-    * Filter
+    * Filters
+        * Filter:
+            * Expression:
+            * Attributes
+                * Domain
     * Pivot
     * Agg
-    * Function
+    * Functions
+        Function
+            * Expression:
+            * Attributes
+                * Domain
 
     
 ## Voorbeeld
