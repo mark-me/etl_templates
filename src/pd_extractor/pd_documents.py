@@ -1,6 +1,4 @@
 import datetime
-import json
-import os
 from pathlib import Path
 
 import xmltodict
@@ -11,7 +9,7 @@ from pd_transform_models_external import TransformModelsExternal
 from pd_transform_mappings import TransformMappings
 from pd_transform_model_physical import TransformModelPhysical
 
-from logging_config import logging
+from src.log_config.logging_config import logging
 #from pd_extractor_pdm import PDMObjectExtractor
 
 logger = logging.getLogger(__name__)
@@ -28,7 +26,7 @@ class PDDocuments:
         lst_files = []
         importfiles = Path(folder_pd)
         importfiles.iterdir()
-        importfiles.glob("*.*dm")       
+        importfiles.glob("*.*dm")
         lst_files = list(importfiles.glob("*.*dm"))
         for file_pd in lst_files:
             document = PDDocument(file_pd)
@@ -47,11 +45,11 @@ class PDDocument:
         self.file_pd = file_pd
         # Extracting data from the file
         self.content = self.read_file_model(file_pd=file_pd)
-        logger.debug(f"Start model extraction voor bestand '{file_pd}'.") 
-        extractor = ObjectExtractor(pd_content=self.content)       
+        logger.debug(f"Start model extraction voor bestand '{file_pd}'.")
+        extractor = ObjectExtractor(pd_content=self.content)
         self.lst_models = extractor.models()
         self.lst_mappings = []
-        
+
     def read_file_model(self, file_pd: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
 
@@ -68,9 +66,9 @@ class PDDocument:
         dict_data = xmltodict.parse(doc)
         dict_data["Model"]["o:RootObject"]["c:Children"]["o:Model"]["a:ModelExtension"] = model_extension
         dict_data = dict_data["Model"]["o:RootObject"]["c:Children"]["o:Model"]
-        
+
         return dict_data
-    
+
     def __serialize_datetime(self, obj):
         """Retrieves a datetime and formats it to ISO-format
 
@@ -90,7 +88,7 @@ class ObjectExtractor:
 
     def __init__(self, pd_content):
         self.content = pd_content
-        extenstion = self.content["a:ModelExtension"] 
+        extenstion = self.content["a:ModelExtension"]
         if extenstion == ".pdm":
             self.transform_model_physical = TransformModelPhysical()
             self.dict_domains = self.__domains()
@@ -100,7 +98,7 @@ class ObjectExtractor:
             self.transform_mappings = TransformMappings()
             self.dict_domains = self.__domains()
         else:
-             logger.error(f"No extractor for extention: '{extenstion}'")  
+             logger.error(f"No extractor for extention: '{extenstion}'")
 
     def models(self) -> list:
         """Retrieves all models and their corresponding objects used in the PowerDesigner document
@@ -111,18 +109,18 @@ class ObjectExtractor:
         dict_model_internal = {}
         lst_models_external = []
         dict_model_physical = {}
-        extenstion = self.content["a:ModelExtension"] 
+        extenstion = self.content["a:ModelExtension"]
         if extenstion == ".pdm":
             dict_model_physical = self.__models_physical()
         elif extenstion == ".ldm":
             dict_model_internal = self.__model_internal()
             lst_models_external = self.__models_external()
         else:
-             logger.error(f"No model for extention: '{extenstion}'")  
+             logger.error(f"No model for extention: '{extenstion}'")
         # Combine models
         lst_models = lst_models_external + [dict_model_internal] + [dict_model_physical]
         return lst_models
-    
+
     def __model_internal(self) -> dict:
         """Retrieves the data on the model which is maintained in the loaded Power Designer document
 
@@ -137,7 +135,7 @@ class ObjectExtractor:
         model["Entities"] = lst_entity
         model["Relationships"] = self.__relationships(lst_entity=lst_entity)
         return model
-    
+
     def __models_physical(self) -> dict:
         """Retrieves the data on the model which is maintained in the loaded Power Designer document
 
@@ -150,7 +148,7 @@ class ObjectExtractor:
         model["Views"] = self.__views()
         model["Procedures"] = self.__procs()
         return model
-    
+
     def __models_external(self) -> list:
         """Retrieve data on models that are maintained outside of the loaded
         Power Designer document and are used for horizontal lineage
@@ -167,7 +165,7 @@ class ObjectExtractor:
             lst_models=lst_target_model, dict_entities=dict_entities
         )
         return lst_models
-    
+
     def __entities_internal(self) -> list:
         """Returns all entities of the Power Designer document's model with their attributes and identifiers
 
@@ -177,7 +175,7 @@ class ObjectExtractor:
         lst_entity = self.content["c:Entities"]["o:Entity"]
         self.transform_model_internal.entities(lst_entity, dict_domains=self.dict_domains)
         return lst_entity
-    
+
     def __entities_external(self) -> dict:
         """Retrieve the Entities of the external model and their associated entities
 
@@ -194,7 +192,7 @@ class ObjectExtractor:
             #logger.debug(f"Found external entity shortcut for '{entity["Name"]}'")
             dict_result[entity["Id"]] = entity
         return dict_result
-    
+
     def __tables(self) -> dict:
         """Retrieve the Tables of the model
 
@@ -209,7 +207,7 @@ class ObjectExtractor:
     def __domains(self) -> dict:
         dict_domains = {}
         if "c:Domains" in self.content:
-            extenstion = self.content["a:ModelExtension"] 
+            extenstion = self.content["a:ModelExtension"]
             if extenstion == ".pdm":
                 lst_domains = self.content["c:Domains"]["o:PhysicalDomain"]
                 dict_domains = self.transform_model_physical.domains(lst_domains=lst_domains)
@@ -229,7 +227,7 @@ class ObjectExtractor:
                 lst_relationships=lst_pd_relationships, lst_entity=lst_entity
             )
         return lst_relationships
-    
+
     def __views(self) -> list:
         """Retrieve the Views of the model
 
@@ -245,7 +243,7 @@ class ObjectExtractor:
             modelname = self.content["Name"]
             logger.warning(f"In het model '{modelname}' zijn geen views opgenomen.")
         #return lst_view
-        
+
         return lst_views
 
     def __procs(self) -> list:

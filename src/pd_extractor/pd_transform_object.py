@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from typing import Union
 
-import logging_config
+import src.log_config.logging_config as logging_config
 
 logger = logging.getLogger(__name__)
 

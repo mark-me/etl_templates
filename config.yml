@@ -1,2 +1,3 @@
-templates: 'duckdb' # 'dedicated-pool'
-models_input: 'input/models.json'
+templates: 'dedicated-pool' # 'duckdb'
+power_designer_ldm: 'input\Example_CL_LDM.ldm'
+json: 'output\Example_CL_LDM.json'

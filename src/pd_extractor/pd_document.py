@@ -1,10 +1,15 @@
 import datetime
 import json
 from pathlib import Path
+import os
+import sys
 
 import xmltodict
 
-from logging_config import logging
+if __name__ == "__main__":
+    sys.path.append(os.getcwd())
+
+from src.log_config.logging_config import logging
 from pd_extractor import ObjectExtractor
 
 logger = logging.getLogger(__name__)
@@ -19,7 +24,7 @@ class PDDocument:
         Args:
             file_pd_ldm (str): Power Designer logical data model document (.ldm)
         """
-
+        logger.info("Ik ben er")
         self.file_pd_ldm = file_pd_ldm
         # Extracting data from the file
         self.content = self.read_file_model(file_pd_ldm=file_pd_ldm)
@@ -161,122 +166,9 @@ class PDDocument:
         logger.debug(f"Document output is written to '{file_output}'")
 
 
-class PDDocumentQuery:
-    """Stores the models and mappings within a single PDDocument"""
-
-    def __init__(self, document: PDDocument):
-        """Retrieves a list of all models and a list of all mappings within a single PDDocument
-
-        Args:
-            document (PDDocument): The representation of a Power Designer logical data model
-        """
-        self._document = document
-        self._lst_models = []
-        self._lst_mappings = []
-
-    def get_entities(self, name_model: str = None):
-        """Retrieves the given name_model's entities or all entities of models
-        Args:
-            name_model (str): Name of the model
-
-        Returns:
-            Array: Each row represents a single entity within a model
-        """
-        lst_models = self.__get_models()
-        lst_results = []
-        if name_model is None:
-            lst_results = [model["Entities"] for model in lst_models]
-        else:
-            lst_results = [
-                model["Entities"] for model in lst_models if model["Name"] == name_model
-            ]
-        return lst_results
-
-    def __get_models(self):
-        if len(self._lst_models) == 0:
-            self._lst_models = self._document.get_models()
-        return self._lst_models
-
-    def __get_mapping(self):
-        if len(self._lst_mappings) == 0:
-            self._lst_mappings = self._document.get_mappings()
-        return self._lst_mappings
-
-    def get_MDDE_model(self) -> list:
-        """Retrieves all models from lst_models and returns them in a dictionary
-
-        Returns:
-            lst_result (dict): Each dictionary value represents a model
-        """
-        # TODO: Genereren ID's op hash
-        lst_models = self.__get_models()
-        lst_result = []
-        for model in lst_models:
-            dict_selection = {
-                "ModelID": model["TargetID"],
-                "Name": model["Name"],
-                "Code": model["Name"],
-                "CreationDate": model["CreationDate"],
-                "ModificationDate": model["ModificationDate"],
-            }
-            lst_result.append(dict_selection)
-        return lst_result
-
-    def get_MDDE_entity(self) -> list:
-        """Retrieves a dictionary of all entities within the models stored in lst_models
-
-        Returns:
-            lst_results (dict): Each dictionary value represents an entity
-        """
-        # TODO: Genereren ID's op hash
-        lst_results = []
-        lst_models = self.__get_models()
-        for model in lst_models:
-            lst_entities = model["Entities"]
-            for entity in lst_entities:
-                dict_selection = {
-                    "EntityID": entity["ObjectID"],
-                    "ModelID": model["TargetID"],
-                    "EntityName": entity["Name"],
-                    "EntityCode": entity["Code"],
-                    "EntitySchema": model[
-                        "Code"
-                    ],  # TODO: Reroute schema, now comes from entity, can be set at model level?
-                    "EntityIsShortcut": str(not model["IsDocumentModel"]),
-                    "EntityOrgID": "",  # TODO: When and how used?
-                    "ModelOrgID": "",  # TODO: When and how used?
-                    "CreationDate": entity["CreationDate"],
-                    "ModificationDate": entity["ModificationDate"],
-                }
-                lst_results.append(dict_selection)
-        return lst_results
-
-    def get_MDDE_attribute(self) -> list:
-        """**Not yet finished** Retrieves all the attributeID's from all models that have IsDocumentModel = True
-
-        Returns:
-            list: Each value represents the ObjectID of a single Attribute
-        """
-        # TODO: Genereren ID's op hash
-        # TODO: Complete
-        lst_results = []
-        lst_models = self.__get_models()
-        # Only the attributes of the non-source model should be deployed
-        models_document = [model for model in lst_models if model["IsDocumentModel"]]
-        for model in models_document:
-            lst_entities = model["Entities"]
-            for entity in lst_entities:
-                lst_attributes = entity["Attributes"]
-                for attr in lst_attributes:
-                    dict_selection = {"AttributeID": attr["ObjectID"]}
-                    lst_results.append(dict_selection)
-
-        return lst_results
-
-
 if __name__ == "__main__":
     file_model = "input/Example_CL_LDM.ldm"  # "input/ExampleDWH.ldm"
-    file_document_output = "output/Example_CL_LDM.json"  # "output/ExampleDWH.json"
+    file_document_output = "output/Example_CL_LDM_new.json"  # "output/ExampleDWH.json"
     document = PDDocument(file_pd_ldm=file_model)
     # Saving model objects
     document.write_result(file_output=file_document_output)

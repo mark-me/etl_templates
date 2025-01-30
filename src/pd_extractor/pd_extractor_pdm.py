@@ -1,7 +1,11 @@
-import logging
+import os
+import sys
 
-import logging_config
-from pd_transform_pdm import TransformModels, TransformProcedures, TransformViews, TransformDomains
+if __name__ == "__main__":
+    sys.path.append(os.getcwd())
+
+from src.log_config.logging_config import logging
+from pd_transform_pdm import TransformModels, TransformProcedures, TransformViews
 
 
 logger = logging.getLogger(__name__)
@@ -76,7 +80,7 @@ class PDMObjectExtractor:
             modelname = self.content["Name"]
             logger.warning(f"In het model '{modelname}' zijn geen views opgenomen.")
         #return lst_view
-        
+
         return lst_views
 
     def __procs(self) -> list:

@@ -2,7 +2,7 @@ import datetime  # TDODO: Remove
 import json  # TODO: Remove
 import logging
 
-import logging_config
+import src.log_config.logging_config as logging_config
 from pd_transform_object import ObjectTransformer
 
 logger = logging.getLogger(__name__)

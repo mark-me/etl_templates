@@ -6,7 +6,7 @@ from pathlib import Path
 import xmltodict
 from jinja2 import Environment, FileSystemLoader
 
-from logging_config import logging
+from src.log_config.logging_config import logging
 from pd_extractor_pdm import PDMObjectExtractor
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class PDDocuments:
         Args:
             folder_pd (str): JSON version of a Power Designer document (.pdm)
         """
-        
+
         # importing the library
         self.folder_pd = folder_pd
         for file in os.listdir(folder_pd):
@@ -43,13 +43,13 @@ class PDDocumentPDM:
         """
         self.file_pd_pdm = file_pd_pdm
         self.content = self.read_file_model(file_pd_pdm=file_pd_pdm)
-        
+
         # Extracting data from the file
         extractor = PDMObjectExtractor(pd_content=self.content)
         # Extracting models
         logger.debug(f"Start model extraction voor bestand '{file_pd_pdm}'.")
         self.lst_models = extractor.models()
-    
+
     def read_file_model(self, file_pd_pdm: str) -> dict:
         """Reading the XML Power Designer ldm file into a dictionary
 
