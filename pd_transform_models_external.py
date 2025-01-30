@@ -49,6 +49,8 @@ class TransformModelsExternal(ObjectTransformer):
         Returns:
             list: The cleaned up version of the external entities data
         """
+        if isinstance(lst_entities,dict):
+            lst_entities=[lst_entities]
         lst_entities = self.clean_keys(lst_entities)
         for i in range(len(lst_entities)):
             entity = lst_entities[i]
@@ -61,6 +63,8 @@ class TransformModelsExternal(ObjectTransformer):
 
     def __entity_attribute(self, entity: dict) -> dict:
         lst_attributes = entity["c:SubShortcuts"]["o:Shortcut"]
+        if isinstance(lst_attributes,dict):
+            lst_attributes=[lst_attributes]
         for i in range(len(lst_attributes)):
             attr = lst_attributes[i]
             if "c:FullShortcutReplica" in attr:

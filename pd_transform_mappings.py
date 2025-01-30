@@ -42,15 +42,20 @@ class TransformMappings(ObjectTransformer):
             )
 
             # Target entity rerouting and enriching
-            id_entity_target = mapping["c:Classifier"]["o:Entity"]["@Ref"]
-            mapping["EntityTarget"] = dict_entities[id_entity_target]
-            logger.debug(f"Mapping target entity: '{mapping['EntityTarget']['Name']}'")
+            if "o:Entity" in mapping["c:Classifier"]:
+                id_entity_target = mapping["c:Classifier"]["o:Entity"]["@Ref"]
+                mapping["EntityTarget"] = dict_entities[id_entity_target]
+                logger.debug(
+                    f"Mapping target entity: '{mapping['EntityTarget']['Name']}'"
+                )
+                # Source entities rerouting and enriching
+                mapping = self.__mapping_entities_source(
+                    mapping=mapping, dict_entities=dict_entities
+                )
+            else:
+                logger.warning(f"Mapping without entity found: '{mapping['Name']}'")
             mapping.pop("c:Classifier")
 
-            # Source entities rerouting and enriching
-            mapping = self.__mapping_entities_source(
-                mapping=mapping, dict_entities=dict_entities
-            )
             # Reroute datasource
             # TODO: Research role of DataSource
             mapping["DataSourceID"] = mapping["c:DataSource"]["o:DefaultDataSource"][
@@ -170,6 +175,8 @@ class TransformMappings(ObjectTransformer):
             json.dump(mapping, outfile, indent=4, default=self.__serialize_datetime)
 
         lst_compositions = mapping["c:ExtendedCompositions"]["o:ExtendedComposition"]
+        if isinstance(lst_compositions, dict):
+            lst_compositions = [lst_compositions]
         # FIXME: Verwijderen compositions die uit extensie voortkomen 'mdde_Mapping_Examples'
         lst_compositions = self.clean_keys(lst_compositions)
         lst_compositions_new = []
@@ -190,47 +197,65 @@ class TransformMappings(ObjectTransformer):
         # Transform and enrich individual compositions
 
         # eerste countlist bepaling niet meer nodig indien de if code alle gevallen bevat
-        countlist = len(
-            lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
-        )
-        if "c:ExtendedCollections" in lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]:
+        if "c:ExtendedComposition.Content" in lst_compositions:
             countlist = len(
-            lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]
-            )          
-        elif "o:ExtendedSubObject" in lst_compositions["c:ExtendedComposition.Content"]:
-            countlist = len(
-            lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
-            )          
-        elif (
-            "c:ExtendedCollections" in lst_compositions["c:ExtendedComposition.Content"]
-        ):
-            countlist = len(lst_compositions["c:ExtendedComposition.Content"]["c:ExtendedCollections"])
-        for i in range(countlist):
-            if "c:ExtendedCollections" in lst_compositions["c:ExtendedComposition.Content"][
-                    "o:ExtendedSubObject"]:
-
-            # composition = self.__composition(
-            #     lst_compositions["c:ExtendedComposition.Content"][
-            #         "o:ExtendedSubObject"
-            #     ][i],
-                composition = self.__composition(
-                lst_compositions["c:ExtendedComposition.Content"][
-                    "o:ExtendedSubObject"]["c:ExtendedCollections"]['o:ExtendedCollection'],
-                dict_entities=dict_entities,
-                dict_attributes=dict_attributes)
+                lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+                )
+            if (
+                "c:ExtendedCollections"
+                in lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+            ):
+                countlist = len(
+                    lst_compositions["c:ExtendedComposition.Content"][
+                        "o:ExtendedSubObject"
+                    ]["c:ExtendedCollections"]
+                )
+            elif "o:ExtendedSubObject" in lst_compositions["c:ExtendedComposition.Content"]:
+                countlist = len(
+                    lst_compositions["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+                )
             elif (
-            "o:ExtendedSubObject" in lst_compositions["c:ExtendedComposition.Content"]
-            ):                
-                composition = self.__composition(
-                lst_compositions["c:ExtendedComposition.Content"][
+                "c:ExtendedCollections" in lst_compositions["c:ExtendedComposition.Content"]
+            ):
+                countlist = len(
+                    lst_compositions["c:ExtendedComposition.Content"][
+                        "c:ExtendedCollections"
+                    ]
+                )
+            for i in range(countlist):
+                if (
+                    "c:ExtendedCollections"
+                    in lst_compositions["c:ExtendedComposition.Content"][
+                        "o:ExtendedSubObject"
+                    ]
+                ):
+                    # composition = self.__composition(
+                    #     lst_compositions["c:ExtendedComposition.Content"][
+                    #         "o:ExtendedSubObject"
+                    #     ][i],
+                    composition = self.__composition(
+                        lst_compositions["c:ExtendedComposition.Content"][
+                            "o:ExtendedSubObject"
+                        ]["c:ExtendedCollections"]["o:ExtendedCollection"],
+                        dict_entities=dict_entities,
+                        dict_attributes=dict_attributes,
+                    )
+                elif (
                     "o:ExtendedSubObject"
-                ][i],
-                dict_entities=dict_entities,
-                dict_attributes=dict_attributes,
-            )
-            composition["Order"] = i
-            lst_compositions[i] = composition
-        lst_compositions.pop("c:ExtendedComposition.Content")    
+                    in lst_compositions["c:ExtendedComposition.Content"]
+                ):
+                    composition = self.__composition(
+                        lst_compositions["c:ExtendedComposition.Content"][
+                            "o:ExtendedSubObject"
+                        ][i],
+                        dict_entities=dict_entities,
+                        dict_attributes=dict_attributes,
+                    )
+                composition["Order"] = i
+                lst_compositions[i] = composition
+            lst_compositions.pop("c:ExtendedComposition.Content")
+        else:
+            logger.warning("Mapping without content")
         mapping["Compositions"] = lst_compositions
         mapping.pop("c:ExtendedCompositions")
         return mapping
@@ -249,10 +274,10 @@ class TransformMappings(ObjectTransformer):
                 f"Composition {composition['CompositionType']} for '{composition['Name']}'"
             )
         else:
-              logger.warning("No 'ExtendedAttributesText")
-            # logger.error(
-            #     f"Composition '{composition['Name']}' has no ExtendedAttributesText to extract a composition type from."
-            # )
+            logger.warning("No 'ExtendedAttributesText")
+        # logger.error(
+        #     f"Composition '{composition['Name']}' has no ExtendedAttributesText to extract a composition type from."
+        # )
 
         # Determine entities involved
         composition = self.__composition_entity(
@@ -260,7 +285,7 @@ class TransformMappings(ObjectTransformer):
         )
         # Join conditions (ON clause)
         if "c:ExtendedCompositions" in composition:
-            if composition["CompositionType"] != "APPLY":
+            if composition["CompositionType"].upper() not in ["APPLY", "FROM"]:
                 composition = self.__composition_join_conditions(
                     composition=composition, dict_attributes=dict_attributes
                 )
@@ -292,7 +317,7 @@ class TransformMappings(ObjectTransformer):
             entity = composition["c:ExtendedCollections"]["o:ExtendedCollection"]
         elif "c:Content" in composition:
             root_data = "c:Content"
-            entity = composition         
+            entity = composition
         else:
             return composition
         entity = self.clean_keys(entity)
