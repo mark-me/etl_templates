@@ -188,13 +188,18 @@ class TransformMappings(ObjectTransformer):
 
         # Searching for the composition items (FROM, JOIN, etc clauses)
         lst_composition_items = []
-        if (
-            "c:ExtendedCollections"
-            in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
-        ):
-            lst_composition_items = composition["c:ExtendedComposition.Content"][
-                "o:ExtendedSubObject"
-            ]["c:ExtendedCollections"]
+        if "c:ExtendedCollections" in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]:
+            if(
+                "o:ExtendedCollection"
+                 in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]
+            ):
+                            lst_composition_items = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]["o:ExtendedCollection"] 
+            else:
+                lst_composition_items = composition["c:ExtendedComposition.Content"][
+                "o:ExtendedSubObject"]["c:ExtendedCollections"]   
+               
+        # elif "c:ExtendedCollections" in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]:
+        #     lst_composition_items = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]           
         elif "o:ExtendedSubObject" in composition["c:ExtendedComposition.Content"]:
             lst_composition_items = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
         elif "c:ExtendedCollections" in composition["c:ExtendedComposition.Content"]:
