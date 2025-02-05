@@ -188,25 +188,39 @@ class TransformMappings(ObjectTransformer):
 
         # Searching for the composition items (FROM, JOIN, etc clauses)
         lst_composition_items = []
-        if "c:ExtendedCollections" in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]:
-            if(
+        if (
+            "c:ExtendedCollections"
+            in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+        ):
+            if (
                 "o:ExtendedCollection"
-                 in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]
+                in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"][
+                    "c:ExtendedCollections"
+                ]
             ):
-                            lst_composition_items = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]["o:ExtendedCollection"] 
+                lst_composition_items = composition["c:ExtendedComposition.Content"][
+                    "o:ExtendedSubObject"
+                ]["c:ExtendedCollections"]["o:ExtendedCollection"]
             else:
                 lst_composition_items = composition["c:ExtendedComposition.Content"][
-                "o:ExtendedSubObject"]["c:ExtendedCollections"]   
-               
+                    "o:ExtendedSubObject"
+                ]["c:ExtendedCollections"]
         # elif "c:ExtendedCollections" in composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]:
-        #     lst_composition_items = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]           
+        #     lst_composition_items = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]["c:ExtendedCollections"]
         elif "o:ExtendedSubObject" in composition["c:ExtendedComposition.Content"]:
-            lst_composition_items = composition["c:ExtendedComposition.Content"]["o:ExtendedSubObject"]
+            lst_composition_items = composition["c:ExtendedComposition.Content"][
+                "o:ExtendedSubObject"
+            ]
         elif "c:ExtendedCollections" in composition["c:ExtendedComposition.Content"]:
-            lst_composition_items = composition["c:ExtendedComposition.Content"]["c:ExtendedCollections"]
+            lst_composition_items = composition["c:ExtendedComposition.Content"][
+                "c:ExtendedCollections"
+            ]
         else:
             logger.warning("Mapping without content")
+        if isinstance(lst_composition_items, dict):
+            lst_composition_items = [lst_composition_items]
 
+        # Transforming individual composition items
         for i, composition_item in enumerate(lst_composition_items):
             composition_item = self.__composition(
                 composition_item,
