@@ -380,7 +380,7 @@ class TransformMappings(ObjectTransformer):
             if isinstance(lst_components, dict):
                 lst_components = [lst_components]
             condition["JoinConditionComponents"] = self.__join_condition_components(
-                lst_components=lst_components, dict_attributes=dict_attributes
+                lst_components=lst_components, dict_attributes=dict_attributes, alias_child=condition["Id"]
             )
             condition.pop("c:ExtendedCollections")
             lst_conditions[i] = condition
@@ -390,13 +390,14 @@ class TransformMappings(ObjectTransformer):
         return composition
 
     def __join_condition_components(
-        self, lst_components: list, dict_attributes: dict
+        self, lst_components: list, dict_attributes: dict, alias_child: str
     ) -> dict:
         """Reroutes, cleans and enriches component data for one join condition
 
         Args:
             lst_components (list): Join condition component
             dict_attributes (dict): All attributes (in- and external)
+            alias_child (str): The PD generated id for the composition component (JOIN)
 
         Returns:
             dict: Cleaned, rerouted and enriched join condition component data
@@ -404,13 +405,12 @@ class TransformMappings(ObjectTransformer):
         dict_components = {}
         dict_child = {}
         dict_parent = {}
-        parent_alias = None
+        alias_parent = None
         lst_components = self.clean_keys(lst_components)
         for component in lst_components:
             type_component = component["Name"]
             if type_component == "mdde_ChildAttribute":
                 # Child attribute
-                # TODO: implement alias to child entity
                 logger.debug("Added child attribute")
                 type_entity = [
                     value
@@ -422,7 +422,7 @@ class TransformMappings(ObjectTransformer):
             elif type_component == "mdde_ParentSourceObject":
                 # Alias to point to a composition entity
                 logger.debug("Added parent entity alias")
-                parent_alias = component["c:Content"][
+                alias_parent = component["c:Content"][
                     "o:ExtendedSubObject"
                 ]["@Ref"]
             elif type_component == "mdde_ParentAttribute":
@@ -441,15 +441,13 @@ class TransformMappings(ObjectTransformer):
                 )
 
         if len(dict_parent) > 0:
-            if parent_alias is not None:
-                dict_parent["EntityAlias"] = parent_alias
+            if alias_parent is not None:
+                dict_parent.update({"EntityAlias": alias_parent})
             dict_components["AttributeParent"] = dict_parent
         if len(dict_child) > 0:
+            dict_child.update({"EntityAlias": alias_child})
             dict_components["AttributeChild"] = dict_child
         return dict_components
-
-
-
 
     def __composition_apply_conditions(
         self, composition: dict, dict_attributes: dict
