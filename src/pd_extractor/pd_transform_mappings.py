@@ -228,6 +228,8 @@ class TransformMappings(ObjectTransformer):
                 dict_attributes=dict_attributes,
             )
             composition_item["Order"] = i
+            if "c:ExtendedCompositions" in composition_item:
+             composition_item.pop("c:ExtendedCompositions")
             lst_composition_items[i] = composition_item
 
         mapping["Compositions"] = lst_composition_items
