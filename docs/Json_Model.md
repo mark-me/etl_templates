@@ -9,7 +9,7 @@
     * Relationships
 
 
-* Tranformation
+* Transformations
     * Mappings:
         * Mapping:
             * EntityTarget: 
