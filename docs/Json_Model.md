@@ -33,10 +33,10 @@
   * Pivot
   * Agg
   * Functions
-        Function
-            *Expression:
-            * Attributes
-                * Domain
+    * Function
+      * Expression:
+      * Attributes
+      * Domain
 
 ## Voorbeeld
 
