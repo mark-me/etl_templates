@@ -4,4 +4,5 @@ MarkupSafe==3.0.2
 pyfiglet==1.0.2
 python-json-logger==3.2.1
 PyYAML==6.0.2
+setuptools==75.8.0
 xmltodict==0.14.2
