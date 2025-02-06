@@ -1,61 +1,60 @@
-## Opbouw
-* Model(s)
-    * Entities
-        * Attributes
-            * Domain
-        * Identifiers
-            * Attribute
-        * 
-    * Relationships
+# Opbouw
 
+* Model(s)
+  * Entities
+    * Attributes
+      * Domain
+    * Identifiers
+      * Attribute
+    *
+  * Relationships
 
 * Transformations
-    * Mappings:
-        * Mapping:
-            * EntityTarget: 
-                * SourceObjects (mdde_SourceObjects)
-                    * SourceObject:
-                        * Entity: 
-                        * JoinConditions (mdde_JoinCondition)
-                            * JoinCondition
-                                * AttributeChild
-                                * AttributeParent
-                                * LiteralValue
-            * AttributeMapping
-                * Expression
-                * AttributesSource
-                * AttributeTarget
-    * Filters
-        * Filter:
-            * Expression:
-            * Attributes
-                * Domain
-    * Pivot
-    * Agg
-    * Functions
+  * Mappings:
+    * Mapping:
+      * EntityTarget:
+        * SourceObjects (mdde_SourceObjects)
+          * SourceObject:
+            * Entity:
+            * JoinConditions (mdde_JoinCondition)
+              * JoinCondition
+                * AttributeChild
+                * AttributeParent
+                * LiteralValue
+      * AttributeMapping
+        * Expression
+        * AttributesSource
+        * AttributeTarget
+  * Filters
+    * Filter:
+      * Expression:
+      * Attributes
+        * Domain
+  * Pivot
+  * Agg
+  * Functions
         Function
-            * Expression:
+            *Expression:
             * Attributes
                 * Domain
 
-    
 ## Voorbeeld
+
 JSON
-----
 
 ```json
 {
     // Models --> list of models that are present in a Power Designer model file.
     "Models": [
-		// Model --> Dict that present in single model with the data needed to generate a DDL
+  // Model --> Dict that present in single model with the data needed to generate a DDL
         {
             "Id": "o2",
             "ObjectID": "FCC854D4-4895-4081-A2AB-FA90BEF99C2A",
             "Name": "Example CL LDM",
             // Model Code  --> Used in DDL for setting Schema name of database object.
             "Code": "DA_CENTRAL",
-            // Rowcount --> Estimated rowcount for the table. Needed for distribution an index part of the DDL creation. 
-			"Rowcount": "300",
+            // Rowcount --> Estimated rowcount for the table. Needed for distribution an index part of the DDL creation.
+   "Rowcount": "300",
             "CreationDate": "2024-11-29T09:27:03",
             "Creator": "User007",
             "ModificationDate": "2025-01-06T15:41:54",
@@ -68,8 +67,8 @@ JSON
             "IsDocumentModel": true,
             // Entities --> list of Entities present in the model
             "Entities": [
-                // Entity --> dict of a Entity 
-				{
+                // Entity --> dict of a Entity
+    {
                     "Id": "o10",
                     "ObjectID": "73A6B276-64CF-4EBF-A0A6-A080E19C64DF",
                     "Name": "Country",
@@ -81,11 +80,11 @@ JSON
                     "Modifier": "User007",
                     // Attributes --> List of Attributes for a Entity (Columns)
                     "Attributes": [
-						{
+      {
                             // Attribute --> an Attribute of an Entity (Column)
                             // Order --> a Attribute to use the correct order of the attributes based on the order of attributes in a Power Designer Model.
                             "Order": 0,
-							"Id": "o90",
+       "Id": "o90",
                             "ObjectID": "9AE60148-E746-46D6-BFF3-6917112583D9",
                             "Name": "Code",
                             "Code": "CODE",
@@ -97,7 +96,7 @@ JSON
                             "DataType": "VMBT50",
                             "Length": "50",
                             "LogicalAttribute.Mandatory": "1",
-                            // Domain --> Dict of a pre-defined datatype for the attribute 
+                            // Domain --> Dict of a pre-defined datatype for the attribute
                             "Domain": {
                                 "Id": "o215",
                                 "Name": "Code",
@@ -107,15 +106,15 @@ JSON
                                 "Precision": ""
                             }
                         }
-                    ]    
+                    ]
                 }
             ]
         }
     ],
     // Transformations --> Dict of objects that are not part of the core model. (Mappings, Filters, Scaler, Pivot, Aggregations)
-    "transformations": 
+    "transformations":
         {
-            // Mappings --> List of Mappings 
+            // Mappings --> List of Mappings
             "Mappings": [
                 {
                     // Mapping --> Dict with a Mapping for a entity
@@ -139,7 +138,7 @@ JSON
                     },
                     // SourceObjects --> List of source entities(tabels) and the role of the entity (From, Join, Apply)
                     "SourceObjects": [
-                        // SourceObject --> Dict of a Source object. Depending on the JoinType  structure can vary. Two examples are present in this example 
+                        // SourceObject --> Dict of a Source object. Depending on the JoinType  structure can vary. Two examples are present in this example
                         {
                             // Order --> The order that the jointype need to be implemented. "From" should always be the first one.
                             "Order": 0,
@@ -163,7 +162,7 @@ JSON
                                 "NameModel": "IN_DTO (LDM)",
                                 "CodeModel": "IN_DTO",
                                 "IsDocumentModel": false
-                            }                        
+                            }
                         },
                         // SourceObject --> Dict of a Source object with JoinType "Left Join". For a Join there needs to be a condition for the join. This can be "LiteralValue" or a Entity/Attribute.
                         {
@@ -204,7 +203,7 @@ JSON
                                     "Modifier": "User007",
                                     // JoinOperator --> gives the type of the comparison (=, >, <, <>, <=, etc. )
                                     "JoinOperator": "=",
-                                    // JoinComponents --> Dict With the objects needed for the comparison. This is a example of a comparison between a attribute value and a LiteralValue 
+                                    // JoinComponents --> Dict With the objects needed for the comparison. This is a example of a comparison between a attribute value and a LiteralValue
                                     "JoinComponents": {
                                         "LiteralValue": "'M01'",
                                         "AttributeChild": {
@@ -234,7 +233,7 @@ JSON
                                     "Modifier": "User007",
                                     // JoinOperator --> gives the type of the comparison (=, >, <, <>, <=, etc. )
                                     "JoinOperator": "=",
-                                    // JoinComponents --> Dict With the objects needed for the comparison. This is a example of a comparison between the destination attribute value and the source attribute value 
+                                    // JoinComponents --> Dict With the objects needed for the comparison. This is a example of a comparison between the destination attribute value and the source attribute value
                                     "JoinComponents": {
                                         "AttributeChild": {
                                             "Id": "o31",
