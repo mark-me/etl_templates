@@ -205,7 +205,7 @@ JSON
                                     // JoinOperator --> gives the type of the comparison (=, >, <, <>, <=, etc. )
                                     "JoinOperator": "=",
                                     // JoinComponents --> Dict With the objects needed for the comparison. This is a example of a comparison between a attribute value and a LiteralValue 
-                                    "JoinComponents ": {
+                                    "JoinComponents": {
                                         "LiteralValue": "'M01'",
                                         "AttributeChild": {
                                             "Id": "o28",
