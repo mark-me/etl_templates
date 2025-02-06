@@ -228,6 +228,8 @@ class TransformMappings(ObjectTransformer):
                 dict_attributes=dict_attributes,
             )
             composition_item["Order"] = i
+            if "c:ExtendedCompositions" in composition_item:
+             composition_item.pop("c:ExtendedCompositions")
             lst_composition_items[i] = composition_item
 
         mapping["Compositions"] = lst_composition_items
@@ -329,7 +331,6 @@ class TransformMappings(ObjectTransformer):
             entity = dict_entities[id_entity]
             logger.debug(f"Composition entity '{entity['Name']}'")
         composition["Entity"] = entity
-        composition["EntityAlias"] = composition["Id"]
         composition.pop(root_data)
         return composition
 
@@ -381,7 +382,7 @@ class TransformMappings(ObjectTransformer):
             if isinstance(lst_components, dict):
                 lst_components = [lst_components]
             condition["JoinConditionComponents"] = self.__join_condition_components(
-                lst_components=lst_components, dict_attributes=dict_attributes
+                lst_components=lst_components, dict_attributes=dict_attributes, alias_child=condition["Id"]
             )
             condition.pop("c:ExtendedCollections")
             lst_conditions[i] = condition
@@ -391,36 +392,39 @@ class TransformMappings(ObjectTransformer):
         return composition
 
     def __join_condition_components(
-        self, lst_components: list, dict_attributes: dict
+        self, lst_components: list, dict_attributes: dict, alias_child: str
     ) -> dict:
         """Reroutes, cleans and enriches component data for one join condition
 
         Args:
             lst_components (list): Join condition component
             dict_attributes (dict): All attributes (in- and external)
+            alias_child (str): The PD generated id for the composition component (JOIN)
 
         Returns:
             dict: Cleaned, rerouted and enriched join condition component data
         """
         dict_components = {}
+        dict_child = {}
+        dict_parent = {}
+        alias_parent = None
         lst_components = self.clean_keys(lst_components)
         for component in lst_components:
             type_component = component["Name"]
             if type_component == "mdde_ChildAttribute":
                 # Child attribute
-                # TODO: implement alias to child entity
                 logger.debug("Added child attribute")
-                type_entity = type_entity = [
+                type_entity = [
                     value
                     for value in ["o:Entity", "o:Shortcut", "o:EntityAttribute"]
                     if value in component["c:Content"]
                 ][0]
                 id_attr = component["c:Content"][type_entity]["@Ref"]
-                dict_components["AttributeChild"] = dict_attributes[id_attr]
+                dict_child = dict_attributes[id_attr].copy()
             elif type_component == "mdde_ParentSourceObject":
                 # Alias to point to a composition entity
                 logger.debug("Added parent entity alias")
-                dict_components["ParentAlias"] = component["c:Content"][
+                alias_parent = component["c:Content"][
                     "o:ExtendedSubObject"
                 ]["@Ref"]
             elif type_component == "mdde_ParentAttribute":
@@ -432,11 +436,19 @@ class TransformMappings(ObjectTransformer):
                     if value in component["c:Content"]
                 ][0]
                 id_attr = component["c:Content"][type_entity]["@Ref"]
-                dict_components["AttributeParent"] = dict_attributes[id_attr]
+                dict_parent = dict_attributes[id_attr].copy()
             else:
                 logger.warning(
                     f"Unhandled kind of join item in condition '{type_component}'"
                 )
+
+        if len(dict_parent) > 0:
+            if alias_parent is not None:
+                dict_parent.update({"EntityAlias": alias_parent})
+            dict_components["AttributeParent"] = dict_parent
+        if len(dict_child) > 0:
+            dict_child.update({"EntityAlias": alias_child})
+            dict_components["AttributeChild"] = dict_child
         return dict_components
 
     def __composition_apply_conditions(
