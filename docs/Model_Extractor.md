@@ -21,7 +21,7 @@ erDiagram
     JOIN_CONDITION ||--|| ATTRIBUTE: role
     SOURCE_OBJECT ||--|| ENTITY: role
     MAPPING ||--o{ ATTRIBUTE_MAPPING : maps
-    ATTRIBUTE_MAPPING ||--|| ATTRIBUTE: role
+    ATTRIBUTE_MAPPING }o--o{ ATTRIBUTE: role
 ```
 
 ## Class diagram for the JSON Model structure
@@ -61,7 +61,7 @@ classDiagram
         +String Code
         +String DataType
         +String Length
-        +String LogicalAttribute.Mandatory
+        +Boolean IsMandatory
     }
     class Domain {
         +String Id
@@ -121,6 +121,26 @@ classDiagram
         +String Code
         +String JoinOperator
     }
+    class ConditionComponents{
+        +String LiteralValue
+    }
+    class ComponentAttribute{
+        + String Id
+        + String Name
+        + String Code
+        + String IdModel
+        + String NameModel
+        + String CodeModel
+        + Boolean IsDocumentModel
+        + String IdEntity
+        + String NameEntity
+        + String CodeEntity
+        + String EntityAlias
+    }
+    class AttributeChild{
+    }
+    class AttributeParent{
+    }
     class AttributeMapping {
         +String Id
         +String ObjectID
@@ -129,8 +149,17 @@ classDiagram
     Mapping "1" *-- "1" EntityTarget
     Mapping "1" *-- "*" SourceObject
     SourceObject "1" *-- "*" JoinCondition
+    JoinCondition "1" *-- "*" ConditionComponents
+    ConditionComponents "1" *-- "*" AttributeChild
+    ConditionComponents "1" *-- "*" AttributeParent
+    ComponentAttribute <|-- AttributeChild
+    ComponentAttribute <|-- AttributeParent
     Mapping "1" *-- "*" AttributeMapping
     note for Mapping "Defines data transformations"
     note for SourceObject "Source tables with join info"
     note for JoinCondition "Join criteria"
+    note for ConditionComponents "The components which make op the join criteria"
+    note for ComponentAttribute "A attribute as part of a join condition (component)"
+    note for AttributeChild "When a ComponentAttribute plays the role of a child attribute"
+    note for AttributeParent "When a ComponentAttribute plays the role of a parent attribute"
 ```
