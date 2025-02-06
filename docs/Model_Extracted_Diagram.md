@@ -11,9 +11,13 @@ erDiagram
     ATTRIBUTE ||--o| DOMAIN : uses
     TRANSFORMATION ||--o{ MAPPING : contains
     MAPPING ||--|| ENTITY_TARGET : targets
+    ENTITY_TARGET ||--|| ENTITY: role
     MAPPING ||--o{ SOURCE_OBJECT : sources
     SOURCE_OBJECT ||--o{ JOIN_CONDITION : defines
+    JOIN_CONDITION ||--|| ATTRIBUTE: role
+    SOURCE_OBJECT ||--|| ENTITY: role
     MAPPING ||--o{ ATTRIBUTE_MAPPING : maps
+    ATTRIBUTE_MAPPING ||--|| ATTRIBUTE: role
 ```
 
 ## Class diagram for the JSON Model structure
