@@ -82,7 +82,7 @@ JSON
                     // Attributes --> List of Attributes for a Entity (Columns)
                     "Attributes": [
 						{
-                            // Attribute --> a Attribute for of a Entity (Column)
+                            // Attribute --> an Attribute of an Entity (Column)
                             // Order --> a Attribute to use the correct order of the attributes based on the order of attributes in a Power Designer Model.
                             "Order": 0,
 							"Id": "o90",
