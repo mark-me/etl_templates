@@ -9,7 +9,6 @@ erDiagram
     MODEL ||--o{ ENTITY : contains
     ENTITY ||--o{ ATTRIBUTE : has
     ATTRIBUTE ||--o| DOMAIN : uses
-    MODEL ||--o{ TRANSFORMATION : has
     TRANSFORMATION ||--o{ MAPPING : contains
     MAPPING ||--|| ENTITY_TARGET : targets
     MAPPING ||--o{ SOURCE_OBJECT : sources
