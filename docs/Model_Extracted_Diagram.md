@@ -1,6 +1,10 @@
-# Model
+# Extracted Model from Power Designer
 
-Comprehensive JSON model for representing data structures, including models, entities, attributes, relationships, transformations, mappings, filters, and functions. The model provides a structured way to define data elements and their transformations, including source objects, join conditions, and attribute mappings.
+The result of using the pd_extractor module is a JSON representation of the model and the transformations involved to fill the model.
+
+The model represents data structures, including models, entities, attributes, relationships, transformations, mappings, filters and functions.
+
+The model also provides a structured way to define data elements and their transformations, including source objects, join conditions, and attribute mappings.
 
 ## Entity Relationship diagram for the JSON Model
 
