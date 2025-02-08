@@ -10,19 +10,13 @@ The model also provides a structured way to define data elements and their trans
 
 Power Designer allows you to build datamodels. With the MDDE extension we specify how the model of a document is loaded. Below is described what what metadata on the data models is extracted and how the ETL/Transformations are extracted. Both models are represented in the JSON that results from the extraction.
 
-### Model implementation
+### Model and Transformation representation in JSON
 
 ```mermaid
 erDiagram
     MODEL ||--o{ ENTITY : contains
     ENTITY ||--o{ ATTRIBUTE : has
     ATTRIBUTE ||--o| DOMAIN : uses
-```
-
-### ETL - Transporting and transforming data
-
-```mermaid
-erDiagram
     TRANSFORMATION ||--o{ MAPPING : contains
     MAPPING ||--|| ENTITY_TARGET : targets
     SOURCE_OBJECT ||--o{ ATTRIBUTE_MAPPING : sources
