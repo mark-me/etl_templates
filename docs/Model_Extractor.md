@@ -8,7 +8,7 @@ The model also provides a structured way to define data elements and their trans
 
 ## Power Designer modelling functionality
 
-Power Designer allows you to build datamodels. With the MDDE extension we specify how the model of a document is loaded. Below is described what what metadata on the data models is extracted and how the ETL/Transformations are extracted.
+Power Designer allows you to build datamodels. With the MDDE extension we specify how the model of a document is loaded. Below is described what what metadata on the data models is extracted and how the ETL/Transformations are extracted. Both models are represented in the JSON that results from the extraction.
 
 ### Model implementation
 
@@ -30,7 +30,9 @@ erDiagram
     MAPPING ||--o{ ATTRIBUTE_MAPPING : maps
 ```
 
-## Entity Relationship diagram for the JSON Model
+### Entity Relationship diagram
+
+This section specifies how both above are related, and not so much how they are extracted into a JSON
 
 ```mermaid
 erDiagram
