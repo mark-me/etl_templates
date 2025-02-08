@@ -6,6 +6,30 @@ The model represents data structures, including models, entities, attributes, re
 
 The model also provides a structured way to define data elements and their transformations, including source objects, join conditions, and attribute mappings.
 
+## Power Designer modelling functionality
+
+Power Designer allows you to build datamodels. With the MDDE extension we specify how the model of a document is loaded. Below is described what what metadata on the data models is extracted and how the ETL/Transformations are extracted.
+
+### Model implementation
+
+```mermaid
+erDiagram
+    MODEL ||--o{ ENTITY : contains
+    ENTITY ||--o{ ATTRIBUTE : has
+    ATTRIBUTE ||--o| DOMAIN : uses
+```
+
+### ETL - Transporting and transforming data
+
+```mermaid
+erDiagram
+    TRANSFORMATION ||--o{ MAPPING : contains
+    MAPPING ||--|| ENTITY_TARGET : targets
+    SOURCE_OBJECT ||--o{ ATTRIBUTE_MAPPING : sources
+    SOURCE_OBJECT ||--o{ JOIN_CONDITION : defines
+    MAPPING ||--o{ ATTRIBUTE_MAPPING : maps
+```
+
 ## Entity Relationship diagram for the JSON Model
 
 ```mermaid
@@ -16,7 +40,7 @@ erDiagram
     TRANSFORMATION ||--o{ MAPPING : contains
     MAPPING ||--|| ENTITY_TARGET : targets
     ENTITY_TARGET ||--|| ENTITY: role
-    MAPPING ||--o{ SOURCE_OBJECT : sources
+    SOURCE_OBJECT ||--o{ ATTRIBUTE_MAPPING : sources
     SOURCE_OBJECT ||--o{ JOIN_CONDITION : defines
     JOIN_CONDITION ||--|| ATTRIBUTE: role
     SOURCE_OBJECT ||--|| ENTITY: role
