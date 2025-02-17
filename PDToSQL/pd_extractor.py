@@ -1,9 +1,9 @@
 import logging
 
-import logging_config
-from pd_transform_model_internal import TransformModelInternal
-from pd_transform_models_external import TransformModelsExternal
-from pd_transform_mappings import TransformMappings
+import PDToSQL.logging_config
+from PDToSQL.pd_transform_model_internal import TransformModelInternal
+from PDToSQL.pd_transform_models_external import TransformModelsExternal
+from PDToSQL.pd_transform_mappings import TransformMappings
 
 logger = logging.getLogger(__name__)
 

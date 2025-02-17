@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from typing import Union
 
-import logging_config
+import PDToSQL.logging_config
 
 logger = logging.getLogger(__name__)
 

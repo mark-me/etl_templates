@@ -3,11 +3,11 @@ import json
 import os
 from pathlib import Path
 
-import xmltodict
-from jinja2 import Environment, FileSystemLoader
+# import xmltodict
+# from jinja2 import Environment, FileSystemLoader
 
-from logging_config import logging
-from pd_extractor_pdm import PDMObjectExtractor
+from PDToSQL.logging_config import logging
+from PDToSQL.pd_extractor_pdm import PDMObjectExtractor
 
 logger = logging.getLogger(__name__)
 

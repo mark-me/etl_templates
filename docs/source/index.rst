@@ -19,7 +19,4 @@ Contents
 .. toctree::
 
    Usage
-   PowerDesigner
-   pd_document
-   pd_extractor
-   pd_transform
+   api

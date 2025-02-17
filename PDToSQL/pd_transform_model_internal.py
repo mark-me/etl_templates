@@ -1,7 +1,7 @@
 import logging
 
-import logging_config
-from pd_transform_object import ObjectTransformer
+import PDToSQL.logging_config
+from PDToSQL.pd_transform_object import ObjectTransformer
 
 logger = logging.getLogger(__name__)
 

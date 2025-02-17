@@ -2,10 +2,10 @@ import datetime
 import json
 from pathlib import Path
 
-import xmltodict
+# import xmltodict
 
-from logging_config import logging
-from pd_extractor import ObjectExtractor
+from PDToSQL.logging_config import logging
+from PDToSQL.pd_extractor import ObjectExtractor
 
 logger = logging.getLogger(__name__)
 

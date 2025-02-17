@@ -1,7 +1,7 @@
 import logging
 
-import logging_config
-from pd_transform_pdm import TransformModels, TransformProcedures, TransformViews, TransformDomains
+import PDToSQL.logging_config
+from PDToSQL.pd_transform_pdm import TransformModels, TransformProcedures, TransformViews, TransformDomains
 
 
 logger = logging.getLogger(__name__)

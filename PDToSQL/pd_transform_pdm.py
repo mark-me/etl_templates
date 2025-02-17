@@ -1,12 +1,12 @@
 import logging
 
-import logging_config
-from pd_transform_object import ObjectTransformer
+import PDToSQL.logging_config
+from PDToSQL.pd_transform_object import ObjectTransformer
 
 logger = logging.getLogger(__name__)
 
 
-class TransformModelPhysical(ObjectTransformer):
+class TransformModels(ObjectTransformer):
     def __init__(self):
         super().__init__()
         
@@ -85,62 +85,6 @@ class TransformModelPhysical(ObjectTransformer):
             lst_tables[i] = table
         return lst_tables
     
-    def view(self, lst_view: list) -> list:
-        # content = self.convert_timestamps(content)
-        lst_view = self.clean_keys(lst_view) 
-        lst_include = [
-            "Id",
-            "ObjectID",
-            "Name",
-            "Code",
-            "CreationDate",
-            "Creator",
-            "ModificationDate",
-            "Modifier",
-            "Author",
-            "SQLQuery",
-        ]
-        
-        lst_view_new = []
-        for view in lst_view:
-            # Rename to remove dot in name
-            view['SQLQuery']= view.pop('View.SQLQuery')
-            dict_new = {}
-            for item in view.keys() :
-                if item in lst_include: 
-                    dict_new[item] = view[item]
-                    #TO DO: Model Code gebruiken als Schema Naam.
-                    #dict_new.update({"Schema": "DA_Central"})
-            lst_view_new.append(dict_new)
-        return lst_view_new
-    
-    def procs(self, lst_procs: list) -> list:
-        lst_procs = self.clean_keys(lst_procs)    
-        
-        lst_include = [
-            "Id",
-            "ObjectID",
-            "Name",
-            "Code",
-            "CreationDate",
-            "Creator",
-            "ModificationDate",
-            "Modifier",
-            "Author",
-            "BeginScript",
-        ]
-        
-        lst_procs_new = []
-        for procs in lst_procs:
-            dict_new = {}
-            for proc in procs.keys() :
-                if proc in lst_include: 
-                    dict_new[proc] = procs[proc]
-                    #TO DO: Model Code gebruiken als Schema Naam.
-                    dict_new.update({"Schema": "DA_Central"})
-            lst_procs_new.append(dict_new)
-        return lst_procs_new
-    
     def __table_columns(self, table: dict, dict_domains: list) -> dict:
         """Reroutes column data for columns and enriches them with domain data
 
@@ -175,8 +119,7 @@ class TransformModelPhysical(ObjectTransformer):
         table["Columns"] = lst_columns
         table.pop("c:Columns")
         return table
-
-#TODO: Clean up code    
+    
 class TransformProcedures(ObjectTransformer):
     def __init__(self):
         super().__init__()
@@ -208,7 +151,6 @@ class TransformProcedures(ObjectTransformer):
             lst_procs_new.append(dict_new)
         return lst_procs_new
 
-#TODO: Clean up code 
 class TransformViews(ObjectTransformer):
     def __init__(self):
         super().__init__()
@@ -241,8 +183,7 @@ class TransformViews(ObjectTransformer):
                     #dict_new.update({"Schema": "DA_Central"})
             lst_view_new.append(dict_new)
         return lst_view_new
-
-#TODO: Clean up code       
+        
 class TransformDomains(ObjectTransformer):
     def __init__(self):
         super().__init__()

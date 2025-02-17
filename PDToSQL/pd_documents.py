@@ -6,12 +6,12 @@ from pathlib import Path
 import xmltodict
 from jinja2 import Environment, FileSystemLoader
 
-from pd_transform_model_internal import TransformModelInternal
-from pd_transform_models_external import TransformModelsExternal
-from pd_transform_mappings import TransformMappings
-from pd_transform_model_physical import TransformModelPhysical
+from PDToSQL.pd_transform_model_internal import TransformModelInternal
+from PDToSQL.pd_transform_models_external import TransformModelsExternal
+from PDToSQL.pd_transform_mappings import TransformMappings
+from PDToSQL.pd_transform_model_physical import TransformModelPhysical
 
-from logging_config import logging
+from PDToSQL.logging_config import logging
 #from pd_extractor_pdm import PDMObjectExtractor
 
 logger = logging.getLogger(__name__)
